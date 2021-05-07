@@ -20,7 +20,7 @@ def MH_regression(X, y, B, tau):
 
     reg = sm.OLS(y, X)
     res = reg.fit()
-    
+
     # Initial parameters
     beta = res.params
     var = res.mse_total
@@ -34,9 +34,10 @@ def MH_regression(X, y, B, tau):
     accept = np.zeros(2*B)
     for i in range(1, 2*B):
         # var and beta are from the b-1 step until they are updated
-        bstar = mvnorm(mean=beta, cov = tau*vbeta).rvs()
+        bstar = mvnorm(mean=beta, cov = tau*vbeta, allow_singular=True).rvs()
         log_r = log_beta_prob(X, y, bstar, var) - log_beta_prob(X, y, beta, var)
         log_u = np.log(uniform.rvs())
+#         print(log_u, log_r, var)
         
         # Gibbs step for sigma^2
         pred = np.array(y - X*np.matrix(beta).T)[:,0]
@@ -49,3 +50,46 @@ def MH_regression(X, y, B, tau):
             accept[i] = 1
         betas[:,i] = beta
     return betas[:,B:], accept[B:]
+
+def Gibbs_regression(X, y, B):
+    """
+    Here if we want it
+    """
+    betas = np.zeros((X.shape[1], 2*B))
+    variances = np.zeros(2*B)
+
+    reg = sm.OLS(y, X)
+    res = reg.fit()
+    
+    beta_hat = np.array((X.T * X).I * X.T * np.matrix(y).T)[:,0]
+    vbeta = (X.T * X).I
+    # Initial parameters
+    beta = beta_hat
+    var = res.mse_total
+    X = np.matrix(X)
+    n = len(y)
+    y = np.matrix(y).T
+    
+    betas[:,0] = beta_hat
+    variances[0] = var
+    accept = np.zeros(2*B)
+    print(var)
+    for i in range(1, 2*B):
+        # var and beta are from the b-1 step until they are updated
+        bstar = mvnorm(mean=beta_hat, cov = var*vbeta, allow_singular=True).rvs()
+        log_r = log_beta_prob(X, y, bstar, var) - log_beta_prob(X, y, beta, var)
+        log_u = np.log(uniform.rvs())
+        
+        # Gibbs step for sigma^2
+        pred = np.array(y - X*np.matrix(beta).T)[:,0]
+        # sample a new variance
+        var  = invgamma.rvs(n/2, pred.dot(pred)/2)
+        variances[i] = var
+        
+        # update beta
+        beta = bstar
+        betas[:,i] = beta
+    return betas[:,B:], accept[B:]
+
+
+
