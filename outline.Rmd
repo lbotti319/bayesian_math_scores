@@ -64,7 +64,7 @@ $$p(\theta|x, y_{obs}) = p(\theta|x, y_{obs}, I)$$
 
 ## Creating Missing Data
 
-\textit{Unit missingness} is when data are missing for an entire observation or row. We assume the Student Performance data set contains no unit missingness. Our observations are either a simple random sample from the population or the complete population. \textit{Item missingness} is when data are missing for variables within an observation or row. Our simulated missingness will only focus on unit missingness.
+\textit{Unit missingness} is when data are missing for an entire observation or row. We assume the Student Performance data set contains no unit missingness. Our observations are either a simple random sample from the population or the complete population. \textit{Item missingness} is when data are missing for variables within an observation or row. Our simulated missingness will only focus on item missingness.
 
 For our evalaution, we will compare methods applied to obscured data sets with different types of missingness to methods applied to the complete data. We will consider missing completely at random (MCAR), missing at random (MAR), and missing not at random (MNAR). 
 
