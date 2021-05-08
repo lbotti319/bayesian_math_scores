@@ -1,0 +1,119 @@
+---
+output:
+  pdf_document
+fontsize: 10pt 
+editor_options: 
+  chunk_output_type: console
+bibliography: references.bib    
+---
+
+# Missing Data
+
+## Background
+
+"Bayesian data analysis draws no distinction between missing data and parameters. Both are uncertain, and they have a joint posterior distribution, conditional on observed data." ~ BDA
+
+A Bayesian model with missing data includes three parts:
+
+1. A prior distribution for the parameters
+2. A joint model for all of the data (missing and observed)
+3. An inclusion model for the missingness process (if the missing data mechanism is non-ignorable)
+
+## Definitions
+
+Let $y = (y_{obs}, y_{mis})$. Let $I$ be the inclusion indicator. Let $\theta$ be model parameters and let $\phi$ be parameters governing the missing data mechanism. Then the joint distribution of of interest is 
+
+$$p(y, I|\theta, \phi) = p(y|\theta)p(I|y, \phi)$$
+
+\vspace{0.25in}
+
+\textbf{Definition:} \textit{inclusion indicator} -- A data structure with the same size and shape as as $y$ with 1 if the corresponding component is observed and 0 if the corresponding component is missing.
+
+\vspace{0.25in}
+
+\textbf{Definition:} \textit{inclusion model} -- The part of the statistical model that tries to model the inclusion indicator. The nature of this model is determined by the type of missingness. 
+
+$$p(I|y_{obs}, y_{mis}, \phi)$$
+
+\vspace{0.25in}
+
+\textbf{Definition:} \textit{missing completely at random (MCAR)} -- If the probability of missingness is the same for all observations. Cause of missingness is unrelated to the data. A simple example is random sampling. This is also called *observed at random*.
+
+$$p(I|y_{obs}, y_{mis}, \phi) = p(I| \phi)$$
+
+
+\vspace{0.25in}
+
+\textbf{Definition:} \textit{missing at random (MAR)} -- If the distribution of the missing data mechanism does not depend on the missing values. \textit{The distribution of the missing data mechanism can depend on fully observed values in the data and parameters for the missing data mechanism.} A simple example is a stratified random sample. 
+
+$$p(I|y_{obs}, y_{mis}, \phi) = p(I|y_{obs}, \phi)$$
+
+\vspace{0.25in}
+
+\textbf{Definition:} \textit{ignorable missing data mechanism} -- If the parameters for the missing data mechanism $\phi$ and the parameters for the model $\theta$ are distinct, then the missing data mechanism is said to be ignorable. (BDA frames this as $\phi$ and $\theta$ are independent in the prior distribution). 
+
+$$p(y_{obs},I|\theta, \phi) = p(y_{obs}|\theta)$$
+
+In this situation
+
+$$p(\theta|x, y_{obs}) = p(\theta|x, y_{obs}, I)$$
+
+\vspace{0.25in}
+
+\textbf{Definition:} \textit{missing not at random (MNAR)} -- If the missing data mechanism depends on the missing values. Neither MCAR or MAR holds. The data are missing for reasons that are unknown to us. 
+
+## Creating Missing Data
+
+\textit{Unit missingness} is when data are missing for an entire observation or row. We assume the Student Performance data set contains no unit missingness. Our observations are either a simple random sample from the population or the complete population. \textit{Item missingness} is when data are missing for variables within an observation or row. Our simulated missingness will only focus on item missingness.
+
+For our evalaution, we will compare methods applied to obscured data sets with different types of missingness to methods applied to the complete data. We will consider missing completely at random (MCAR), missing at random (MAR), and missing not at random (MNAR). 
+
+It is important to note that we know the type of missingness before appying our methods, which is a best case scenario. @vanBurren2018 notes that there are tests to determine MCAR vs. MAR but they aren't widely used. There are no tests to compare MAR vs. MNAR.
+
+### 1. MCAR
+
+Randomly drop values. 
+
+$$p(I| \phi)$$
+
+In this case, $\phi$ will just be a probability.
+
+### 2. MAR with ignorable missing data mechanism
+
+Drop values conditional on variables that will be included in the final model of interest. Furthermore, the prior distribution for $\theta$ and $\phi$ need to be independent. 
+
+$$p(I|y_{obs}, y_{mis}, \phi) = p(I|y_{obs}, \phi)$$
+
+Note: we can model the missingness mechanism to try to improve the model.
+
+### 3. MNAR/MAR with non-ignorable missing data mechanism
+
+Create missingness conditional on the values that are missing. 
+
+## Methods
+
+## Combination Rules for Multiple Imputation
+
+## Comparisons
+
+We implement missing data methods under the different missing data scenarios above. For each method we implement three comparisons to evaluate the performance of the methods under the different scenarios. 
+
+First, we visually compare samples from the posterior distributions under the case with no missing data against cases with missing data. If the methods are effective, the center and spread of the posterior samples from the case with missing data should match the case without missing data. 
+
+Second, we compare inferences with a common decision rule. For example, if the coefficient for ___ is different than zero for the case without missing data, is it also different than zero for cases with missing data. Ideally, each case will have a handful of inferences and the inferences should align across all cases. 
+
+Finally, we will calculate credible interval overlap. @Karr2006 introduced confidence interval overlap as a method to evaluate the utility of data after statistical disclosure control. We use the notation of @Snoke2018.
+
+Let $U_{comp,k}$ be the upper bound of the $k^{th}$ credible interval for the case without missing data. Let $U_{miss,k}$ be the upper bound of the $k^{th}$ credible interval for the case with missing data. Let $L_{comp,k}$ be the lower bound of the $k^{th}$ credible interval for the case without missing data. Let $L_{miss,k}$ be the lower bound of the $k^{th}$ credible interval for the case with missing data. 
+
+The credible interval overlap for the $k_th$ estimate (coefficient or mean) is 
+
+$$J_k = \frac{1}{2}\left[\frac{min(U_{comp,k}, U_{miss,k}) - max(L_{comp,k}, L_{miss,k})}{U_{comp,k} - L_{comp,k}} + \frac{min(U_{comp,k}, U_{miss,k}) - max(L_{comp,k}, L_{miss,k})}{U_{,k} - L_{,k}}\right]$$
+
+The interval overlap measure can then be summarized as 
+
+$$J = \frac{1}{p}\sum_{i = 1}^pJ_k$$
+
+where $p$ is the number of interval or coefficients. 
+
+## References
