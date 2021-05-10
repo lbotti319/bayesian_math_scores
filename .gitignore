@@ -1,2 +1,14 @@
+# R files
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+# LaTeX files
+*.bbl
+*.zip
+
+# Python files
 __pycache__
 .ipynb_checkpoints
+
