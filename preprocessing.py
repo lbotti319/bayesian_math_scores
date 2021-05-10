@@ -30,3 +30,44 @@ def prepare_data(df):
     df_enc = pd.DataFrame.sparse.from_spmatrix(encoded_cats, columns = encoded_cat_features)
 
     return X.join(df_enc), y
+
+
+def prepare_data_no_standardizing(df):
+    """
+    Splits out the target variable from the rest
+    Converts categorical values to numeric with onehote encoding
+    """
+    y = df['G3']
+    df.drop('G3', axis=1, inplace=True)
+
+    X = pd.get_dummies(df, drop_first=True)
+    X['intercept'] = 1
+
+    return X, y
+
+
+def MAR_data_deletion(df, percent_missing_feature1, percent_missing_feature2, missing_feature1, missing_feature2):
+    """
+    missing_feature1 is higher_yes
+    missing_feature2 is either G2 or absences
+
+    Example for missing features higher_yes and G2/absences:
+    Higher_yes: Younger than 18, the less likely they are to know if they'll pursue higher ed
+    G2/absences: The older they are (18 - 22),
+    the more likely to get permission to skip mid semester grades
+    The older the are (18 - 22), the more likely they are to skip/be absent from class
+    """
+    df = df.copy()
+
+    underage_ind = np.where(df["age"] < 18)[0]
+    overage_ind = np.where(df["age"] >= 18)[0]
+
+    n = df.shape[0]
+
+    nanidx_missing_feature1 = np.random.choice(underage_ind, int(n * percent_missing_feature1))
+    nanidx_missing_feature2 = np.random.choice(overage_ind, int(n * percent_missing_feature1))
+
+    df.loc[nanidx_missing_feature1, missing_feature1] = np.NaN
+    df.loc[nanidx_missing_feature2, missing_feature2] = np.NaN
+
+    return df
