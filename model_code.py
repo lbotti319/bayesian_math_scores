@@ -3,6 +3,7 @@ import numpy as np
 from scipy.stats import multivariate_normal as mvnorm
 from scipy.stats import uniform, invgamma, bernoulli, poisson, norm
 import statsmodels.api as sm
+from tqdm import tqdm
 
 def log_beta_prob(X, y, beta, var=1):
     """
@@ -130,6 +131,7 @@ def dist_log_gamma1(gamma1, gamma0, absences, age_missing_absences, loc, scale):
 
 def Gibbs_MH(X, y, B, n, higher_yes_col, absences_col, age_col, tau, loc=0, scale=10):
     """
+    need to add seed -- think it will be worth it
 
     """
     ################# Initializations ################
@@ -150,7 +152,7 @@ def Gibbs_MH(X, y, B, n, higher_yes_col, absences_col, age_col, tau, loc=0, scal
     age_missing_higher_yes = X[higher_yes_missing_idx, age_col]
     age_missing_absences = X[absences_missing_idx, age_col]
 
-    # Initialize parameters
+    # initialize regression and missing covariates parameters
     higher_yes = round(np.nanmean(X[:, higher_yes_col]))
     higher_yes_sim[:, 0] = higher_yes
     X[higher_yes_missing_idx, higher_yes_col] = higher_yes_sim[:, 0]
@@ -182,27 +184,70 @@ def Gibbs_MH(X, y, B, n, higher_yes_col, absences_col, age_col, tau, loc=0, scal
     proposal_gamma0 = norm(loc=0, scale=tau)
     proposal_gamma1 = norm(loc=0, scale=tau)
 
-    for i in range(1, 2 * B):
+    for i in tqdm(range(1, 2 * B)):
         # sample a beta
         beta = mvnorm(mean=beta_hat, cov=sigmas2[i-1] * vbeta, allow_singular=True).rvs()
         # sample a sigma2
-        sigma2 = invgamma.rvs(n / 2, (y - X.dot(betas[:, i-1])).T.dot(y - X.dot(betas[:, i-1])) / 2)
+        sigma2 = invgamma.rvs(n / 2, scale=(y - X.dot(betas[:, i-1])).T.dot(y - X.dot(betas[:, i-1])) / 2)
         # sample the missing higher_yes
         p = np.exp(alpha0 + alpha1 * age_missing_higher_yes) / (1 + np.exp(alpha0 + alpha1 * age_missing_higher_yes))
         higher_yes = bernoulli.rvs(p)
         # sample the missing absences
         mu = np.exp(gamma0 + gamma1 * age_missing_absences)
         absences = poisson.rvs(mu)
+
         # sample alpha0, alpha1
-        alpha0, accepts_alpha0 = MH_step(alpha0, dist_log_alpha0, proposal_alpha0, accepts_alpha0,
-                                         alpha1, higher_yes_sim[:, i-1], age_missing_higher_yes, loc, scale)
-        alpha1, accepts_alpha1 = MH_step(alpha1, dist_log_alpha1, proposal_alpha1, accepts_alpha1,
-                                         alpha0, higher_yes_sim[:, i-1], age_missing_higher_yes, loc, scale)
+        alpha0_star = proposal_alpha0.rvs()
+        log_u = np.log(uniform.rvs())
+        log_r = (
+                dist_log_alpha0(alpha0_star, alpha1, higher_yes_sim[:, i-1], age_missing_higher_yes, loc, scale) -
+                dist_log_alpha0(alpha0, alpha1, higher_yes_sim[:, i-1], age_missing_higher_yes, loc, scale)
+        )
+        if log_u < log_r:
+            alpha0 = alpha0_star
+            accepts_alpha0 += 1
+
+        alpha1_star = proposal_alpha1.rvs()
+        log_u = np.log(uniform.rvs())
+        log_r = (
+                dist_log_alpha1(alpha1_star, alpha0, higher_yes_sim[:, i-1], age_missing_higher_yes, loc, scale) -
+                dist_log_alpha1(alpha1, alpha0, higher_yes_sim[:, i-1], age_missing_higher_yes, loc, scale)
+        )
+        if log_u < log_r:
+            alpha1 = alpha1_star
+            accepts_alpha1 += 1
+
         # sample gamma0, gamma1
-        gamma0, accepts_alpha0 = MH_step(gamma0, dist_log_gamma0, proposal_gamma0, accepts_gamma0,
-                                         gamma1, absences_sim[:, i-1], age_missing_absences, loc, scale)
-        gamma1, accepts_alpha1 = MH_step(gamma1, dist_log_gamma1, proposal_gamma1, accepts_gamma1,
-                                         gamma0, absences_sim[:, i-1], age_missing_absences, loc, scale)
+        gamma0_star = proposal_gamma0.rvs()
+        log_u = np.log(uniform.rvs())
+        log_r = (
+                dist_log_gamma0(gamma0_star, gamma1, absences_sim[:, i-1], age_missing_absences, loc, scale) -
+                dist_log_gamma0(gamma0, gamma1, absences_sim[:, i-1], age_missing_absences, loc, scale)
+        )
+        if log_u < log_r:
+            gamma0 = gamma0_star
+            accepts_gamma0 += 1
+
+        gamma1_star = proposal_gamma1.rvs()
+        log_u = np.log(uniform.rvs())
+        log_r = (
+                dist_log_gamma1(gamma1_star, gamma0, absences_sim[:, i-1], age_missing_absences, loc, scale) -
+                dist_log_gamma1(gamma1, gamma0, absences_sim[:, i-1], age_missing_absences, loc, scale)
+        )
+        if log_u < log_r:
+            gamma1 = gamma1_star
+            accepts_gamma1 += 1
+
+        # sample alpha0, alpha1
+        #alpha0, accepts_alpha0 = MH_step(alpha0, dist_log_alpha0, proposal_alpha0, accepts_alpha0,
+        #                                 alpha1, higher_yes_sim[:, i-1], age_missing_higher_yes, loc, scale)
+        #alpha1, accepts_alpha1 = MH_step(alpha1, dist_log_alpha1, proposal_alpha1, accepts_alpha1,
+        #                                 alpha0, higher_yes_sim[:, i-1], age_missing_higher_yes, loc, scale)
+        # sample gamma0, gamma1
+        #gamma0, accepts_alpha0 = MH_step(gamma0, dist_log_gamma0, proposal_gamma0, accepts_gamma0,
+        #                                 gamma1, absences_sim[:, i-1], age_missing_absences, loc, scale)
+        #gamma1, accepts_alpha1 = MH_step(gamma1, dist_log_gamma1, proposal_gamma1, accepts_gamma1,
+        #                                 gamma0, absences_sim[:, i-1], age_missing_absences, loc, scale)
 
         # updates
         betas[:, i] = beta
@@ -217,12 +262,10 @@ def Gibbs_MH(X, y, B, n, higher_yes_col, absences_col, age_col, tau, loc=0, scal
         X[absences_missing_idx, absences_col] = absences
         beta_hat = np.linalg.inv(X.T.dot(X)).dot(X.T).dot(y)
         vbeta = np.linalg.inv(X.T.dot(X))
-
-        print((y - X.dot(betas[:, i-1])).T.dot(y - X.dot(betas[:, i-1])) / 2)
     ##################################################
 
-    return (betas, sigmas2, higher_yes_sim, absences_sim, alphas0, alphas1, gammas0, gammas1,
-            accepts_alpha0, accepts_alpha1, accepts_gamma0, accepts_gamma0)
+    return (betas[:, B:], sigmas2[B:], higher_yes_sim[:, B:], absences_sim[:, B:], alphas0[B:], alphas1[B:],
+            gammas0[B:], gammas1[B:], accepts_alpha0, accepts_alpha1, accepts_gamma0, accepts_gamma0)
 
 ###################################################################
 ###################################################################
