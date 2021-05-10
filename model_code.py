@@ -107,27 +107,28 @@ def MH_step(param, target, proposal, accepts_param, *args):
     return param, accepts_param
 
 
-def dist_alpha0(alpha0, alpha1, higher_yes, age_missing_higher_yes):
+def dist_log_alpha0(alpha0, alpha1, higher_yes, age_missing_higher_yes, loc, scale):
     p = np.exp(alpha0 + alpha1*age_missing_higher_yes) / (1 + np.exp(alpha0 + alpha1*age_missing_higher_yes))
-    return np.prod(bernoulli.pmf(higher_yes, p)) * norm.pdf(alpha0, loc=0, scale=100)
+    return np.sum((1 - higher_yes) * np.log(1 - p) + higher_yes * np.log(p)) - (alpha0 - loc)**2 / (2 * scale)
 
 
-def dist_alpha1(alpha1, alpha0, higher_yes, age_missing_higher_yes):
+def dist_log_alpha1(alpha1, alpha0, higher_yes, age_missing_higher_yes, loc, scale):
     p = np.exp(alpha0 + alpha1*age_missing_higher_yes) / (1 + np.exp(alpha0 + alpha1*age_missing_higher_yes))
-    return np.prod(bernoulli.pmf(higher_yes, p)) * norm.pdf(alpha1, loc=0, scale=100)
+    return np.sum((1 - higher_yes) * np.log(1 - p) + higher_yes * np.log(p)) - (alpha1 - loc)**2 / (2 * scale)
 
 
-def dist_gamma0(gamma0, gamma1, absences, age_missing_absences):
+def dist_log_gamma0(gamma0, gamma1, absences, age_missing_absences, loc, scale):
     mu = np.exp(gamma0 + gamma1*age_missing_absences)
     return np.prod(poisson.pmf(absences, mu)) * norm.pdf(gamma0, loc=0, scale=100)
 
 
-def dist_gamma1(gamma1, gamma0, absences, age_missing_absences):
+
+def dist_log_gamma1(gamma1, gamma0, absences, age_missing_absences, loc, scale):
     mu = np.exp(gamma0 + gamma1*age_missing_absences)
     return np.prod(poisson.pmf(absences, mu)) * norm.pdf(gamma1, loc=0, scale=100)
 
 
-def Gibbs_MH(X, y, B, n, higher_yes_col, absences_col, tau):
+def Gibbs_MH(X, y, B, n, higher_yes_col, absences_col, age_col, tau, loc=0, scale=10):
     """
 
     """
@@ -146,8 +147,8 @@ def Gibbs_MH(X, y, B, n, higher_yes_col, absences_col, tau):
     gammas0, gammas1 = np.zeros(2 * B), np.zeros(2 * B)
 
     # getting ages for the missing values
-    age_missing_higher_yes = X[higher_yes_missing_idx, 1]
-    age_missing_absences = X[absences_missing_idx, 1]
+    age_missing_higher_yes = X[higher_yes_missing_idx, age_col]
+    age_missing_absences = X[absences_missing_idx, age_col]
 
     # Initialize parameters
     higher_yes = round(np.nanmean(X[:, higher_yes_col]))
@@ -193,15 +194,15 @@ def Gibbs_MH(X, y, B, n, higher_yes_col, absences_col, tau):
         mu = np.exp(gamma0 + gamma1 * age_missing_absences)
         absences = poisson.rvs(mu)
         # sample alpha0, alpha1
-        alpha0, accepts_alpha0 = MH_step(alpha0, dist_alpha0, proposal_alpha0, accepts_alpha0,
-                                         alpha1, higher_yes, age_missing_higher_yes)
-        alpha1, accepts_alpha1 = MH_step(alpha1, dist_alpha1, proposal_alpha1, accepts_alpha1,
-                                         alpha0, higher_yes, age_missing_higher_yes)
+        alpha0, accepts_alpha0 = MH_step(alpha0, dist_log_alpha0, proposal_alpha0, accepts_alpha0,
+                                         alpha1, higher_yes, age_missing_higher_yes, loc, scale)
+        alpha1, accepts_alpha1 = MH_step(alpha1, dist_log_alpha1, proposal_alpha1, accepts_alpha1,
+                                         alpha0, higher_yes, age_missing_higher_yes, loc, scale)
         # sample gamma0, gamma1
-        gamma0, accepts_alpha0 = MH_step(gamma0, dist_gamma0, proposal_gamma0, accepts_gamma0,
-                                         gamma1, absences, age_missing_absences)
-        gamma1, accepts_alpha1 = MH_step(gamma1, dist_gamma1, proposal_gamma1, accepts_gamma1,
-                                         gamma0, absences, age_missing_absences)
+        gamma0, accepts_alpha0 = MH_step(gamma0, dist_log_gamma0, proposal_gamma0, accepts_gamma0,
+                                         gamma1, absences, age_missing_absences, loc, scale)
+        gamma1, accepts_alpha1 = MH_step(gamma1, dist_log_gamma1, proposal_gamma1, accepts_gamma1,
+                                         gamma0, absences, age_missing_absences, loc, scale)
 
         # updates
         betas[:, i] = beta
