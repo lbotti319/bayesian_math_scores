@@ -82,7 +82,7 @@ def Gibbs_regression(X, y, B):
         # Gibbs step for sigma^2
         pred = np.array(y - X*np.matrix(beta).T)[:,0]
         # sample a new variance
-        var  = invgamma.rvs(n/2, pred.dot(pred)/2)
+        var = invgamma.rvs(n/2, pred.dot(pred)/2)
         variances[i] = var
         
         # update beta
@@ -96,12 +96,11 @@ def Gibbs_regression(X, y, B):
 ###################################################################
 
 
-def MH_step(param, target, proposal, accepts_param, *args):
-    accepted = 0
-    param_star = proposal.rvs()
-    u = uniform.rvs()
-    r = target(param_star, *args) / target(param, *args)
-    if u < r:
+def MH_step(param, log_target, log_proposal, accepts_param, *args):
+    param_star = log_proposal.rvs()
+    log_u = np.log(uniform.rvs())
+    log_r = log_target(param_star, *args) - log_target(param, *args)
+    if log_u < log_r:
         param = param_star
         accepts_param += 1
     return param, accepts_param
@@ -119,13 +118,14 @@ def dist_log_alpha1(alpha1, alpha0, higher_yes, age_missing_higher_yes, loc, sca
 
 def dist_log_gamma0(gamma0, gamma1, absences, age_missing_absences, loc, scale):
     mu = np.exp(gamma0 + gamma1*age_missing_absences)
-    return np.prod(poisson.pmf(absences, mu)) * norm.pdf(gamma0, loc=0, scale=100)
-
+    return np.sum(absences * (gamma0 + gamma1*age_missing_absences) - mu) - (gamma0 - loc)**2 / (2 * scale)
+    # np.prod(poisson.pmf(absences, mu)) * norm.pdf(gamma0, loc=0, scale=100)
 
 
 def dist_log_gamma1(gamma1, gamma0, absences, age_missing_absences, loc, scale):
     mu = np.exp(gamma0 + gamma1*age_missing_absences)
-    return np.prod(poisson.pmf(absences, mu)) * norm.pdf(gamma1, loc=0, scale=100)
+    return np.sum(absences * (gamma0 + gamma1*age_missing_absences) - mu) - (gamma1 - loc)**2 / (2 * scale)
+    # np.prod(poisson.pmf(absences, mu)) * norm.pdf(gamma1, loc=0, scale=100)
 
 
 def Gibbs_MH(X, y, B, n, higher_yes_col, absences_col, age_col, tau, loc=0, scale=10):
@@ -184,9 +184,9 @@ def Gibbs_MH(X, y, B, n, higher_yes_col, absences_col, age_col, tau, loc=0, scal
 
     for i in range(1, 2 * B):
         # sample a beta
-        beta = mvnorm(mean=beta_hat, cov=sigma2 * vbeta, allow_singular=True).rvs()
+        beta = mvnorm(mean=beta_hat, cov=sigmas2[i-1] * vbeta, allow_singular=True).rvs()
         # sample a sigma2
-        sigma2 = invgamma.rvs(n / 2, (y - X.dot(beta)).T.dot(y - X.dot(beta)) / 2)
+        sigma2 = invgamma.rvs(n / 2, (y - X.dot(betas[:, i-1])).T.dot(y - X.dot(betas[:, i-1])) / 2)
         # sample the missing higher_yes
         p = np.exp(alpha0 + alpha1 * age_missing_higher_yes) / (1 + np.exp(alpha0 + alpha1 * age_missing_higher_yes))
         higher_yes = bernoulli.rvs(p)
@@ -195,14 +195,14 @@ def Gibbs_MH(X, y, B, n, higher_yes_col, absences_col, age_col, tau, loc=0, scal
         absences = poisson.rvs(mu)
         # sample alpha0, alpha1
         alpha0, accepts_alpha0 = MH_step(alpha0, dist_log_alpha0, proposal_alpha0, accepts_alpha0,
-                                         alpha1, higher_yes, age_missing_higher_yes, loc, scale)
+                                         alpha1, higher_yes_sim[:, i-1], age_missing_higher_yes, loc, scale)
         alpha1, accepts_alpha1 = MH_step(alpha1, dist_log_alpha1, proposal_alpha1, accepts_alpha1,
-                                         alpha0, higher_yes, age_missing_higher_yes, loc, scale)
+                                         alpha0, higher_yes_sim[:, i-1], age_missing_higher_yes, loc, scale)
         # sample gamma0, gamma1
         gamma0, accepts_alpha0 = MH_step(gamma0, dist_log_gamma0, proposal_gamma0, accepts_gamma0,
-                                         gamma1, absences, age_missing_absences, loc, scale)
+                                         gamma1, absences_sim[:, i-1], age_missing_absences, loc, scale)
         gamma1, accepts_alpha1 = MH_step(gamma1, dist_log_gamma1, proposal_gamma1, accepts_gamma1,
-                                         gamma0, absences, age_missing_absences, loc, scale)
+                                         gamma0, absences_sim[:, i-1], age_missing_absences, loc, scale)
 
         # updates
         betas[:, i] = beta
@@ -217,6 +217,8 @@ def Gibbs_MH(X, y, B, n, higher_yes_col, absences_col, age_col, tau, loc=0, scal
         X[absences_missing_idx, absences_col] = absences
         beta_hat = np.linalg.inv(X.T.dot(X)).dot(X.T).dot(y)
         vbeta = np.linalg.inv(X.T.dot(X))
+
+        print((y - X.dot(betas[:, i-1])).T.dot(y - X.dot(betas[:, i-1])) / 2)
     ##################################################
 
     return (betas, sigmas2, higher_yes_sim, absences_sim, alphas0, alphas1, gammas0, gammas1,
