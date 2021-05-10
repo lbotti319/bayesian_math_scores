@@ -40,9 +40,9 @@ def create_mnar(df, a0, a1, share_yes, share_no):
         
         return x
     
-    df["higher"] = df['higher'].apply(higher_to_na, share_yes=0.1, share_no=0.1)
+    df["G2"] = df["G2"].apply(g2_to_na, a0=a0, a1=a1)
     
-    df["G2"] = df['G2'].apply(g2_to_na, a0=0.1, a1=0.01)
+    df["higher"] = df["higher"].apply(higher_to_na, share_yes=share_yes, share_no=share_no)
   
     return df
   
