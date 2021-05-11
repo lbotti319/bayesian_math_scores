@@ -11,7 +11,7 @@ This repo contains the final project for Math 640 at Georgetown University.
 ## Organization
 
 * Data go in `data/` folder
-* `.py` scripts go in `py/` directory
+* `.py` scripts go in `src/` directory
 * Results as `.csvs` go in `results/` directory
 * Preface results with numbers:
   * `01` for no missing data
