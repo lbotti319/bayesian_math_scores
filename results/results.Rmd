@@ -1,0 +1,150 @@
+---
+title: "Results Summaries"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+
+```
+
+```{r}
+library(tidyverse)
+source(here::here("src", "interval_overlap.R"))
+
+theme_set(theme_minimal())
+
+```
+
+## Load Data
+
+```{r}
+scenarios_order <- c("No missing", "MCAR 0.05", "MCAR 0.10", "MCAR 0.25", "MCAR 0.50")
+
+all_results <- bind_rows(
+  "No missing" = read_csv(here::here("results", "01_beta_dists.csv")),
+  "MCAR 0.05" = read_csv(here::here("results", "02_dists_0.05.csv")),
+  "MCAR 0.10" = read_csv(here::here("results", "02_dists_0.1.csv")),
+  "MCAR 0.25" = read_csv(here::here("results", "02_dists_0.25.csv")),
+  "MCAR 0.50" = read_csv(here::here("results", "02_dists_0.5.csv")),
+  .id = "scenario"
+)  %>%
+  pivot_longer(
+    -scenario, 
+    names_to = "variable", 
+    values_to = "beta"
+  ) %>%
+  mutate(scenario = factor(scenario, levels = scenarios_order))
+
+```
+
+## Compare Samples
+
+```{r}
+# calculate posterior medians
+posterior_medians <- all_results %>%
+  group_by(variable, scenario) %>%
+  summarize(beta = median(beta)) %>%
+  ungroup()
+
+# plot samples and medians
+ggplot() +
+  geom_point(data = all_results,
+             mapping = aes(beta, scenario),
+             alpha = 0.2) +
+  geom_point(data = posterior_medians,
+             mapping = aes(beta, scenario),
+             color = "red") +
+  facet_wrap(~variable, scales = "free_x", nrow = 2) +
+  labs(title = "Posterior Samples",
+       subtitle = "Posterior medians in red",
+       x = "Beta Samples",
+       y = NULL)
+
+```
+
+## Compare Posterior Probabilites and Inferences
+
+```{r}
+# calculate posterior probabilities
+posterior_probabilities <- all_results %>%
+  group_by(scenario, variable) %>%
+  summarize(p_gt_0 = mean(beta > 0)) %>%
+  ungroup()
+
+# plot posterior probabilities
+posterior_probabilities %>%
+  ggplot(aes(p_gt_0, scenario)) +
+  geom_col() +
+  geom_vline(aes(xintercept = 0.05), color = "red") +
+  facet_wrap(~variable,
+             nrow = 2) +
+  labs(title = "Posterior Probabilities",
+       subtitle = "0.05 line in red",
+       x = "Posterior Probability",
+       y = NULL)
+
+```
+
+## Credible Interval Overlap
+
+```{r}
+# calculate the bounds for the complete data
+comp_results <- all_results %>%
+  filter(scenario == "No missing") %>%
+  group_by(scenario, variable) %>%
+  summarize(
+    Lcomp = quantile(beta, probs = 0.025),
+    Ucomp = quantile(beta, probs = 0.975)
+  ) %>%
+  ungroup() %>%
+  select(-scenario)
+
+# calculate the bounds for the missing data
+miss_results <- all_results %>%
+  filter(scenario != "No missing") %>%   
+  group_by(scenario, variable) %>%
+  summarize(
+    Lmiss = quantile(beta, probs = 0.025),
+    Umiss = quantile(beta, probs = 0.975)
+  ) %>%
+  ungroup()
+
+# calculate credible interval overlap
+cred_interval_overlap <- 
+  left_join(miss_results, comp_results, by = "variable") %>%
+  mutate(
+    interval_overlap =
+      interval_overlap(
+        Ucomp = Ucomp, 
+        Umiss = Umiss, 
+        Lcomp = Lcomp, 
+        Lmiss = Lmiss
+      )
+  )
+    
+# plot the credible interval overlap for each variable
+cred_interval_overlap %>%
+  ggplot(aes(interval_overlap, scenario)) +
+  geom_col() +
+  facet_wrap(~variable, nrow = 2) +
+  labs(title = "Regression Confidence Interval Overlap",
+       x = "Interval Overlap",
+       y = NULL)
+
+# plot the credible interval overlap for each model
+cred_interval_overlap %>%
+  group_by(scenario) %>%
+  summarize(interval_overlap = mean(interval_overlap)) %>%
+  ggplot(aes(interval_overlap, scenario)) +
+  geom_col() +
+  labs(title = "Regression Confidence Interval Overlap",
+       x = "Interval Overlap",
+       y = NULL)
+
+```
+
