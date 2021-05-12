@@ -194,14 +194,10 @@ def Gibbs_MH(X, y, B, n, higher_yes_col, absences_col, age_col, taus, thin, loc=
     ##################################################
 
     ############ Sampling Gibbs + MH #################
-    #proposal_alpha0 = norm(loc=0, scale=taus[0])
-    #proposal_alpha1 = norm(loc=0, scale=taus[1])
-    #proposal_gamma0 = norm(loc=0, scale=taus[2])
-    #proposal_gamma1 = norm(loc=0, scale=taus[3])
     proposal_alpha0 = norm(loc=alpha0, scale=taus[0])
     proposal_alpha1 = norm(loc=alpha1, scale=taus[1])
-    #proposal_gamma0 = norm(loc=gamma0, scale=taus[2])
-    #proposal_gamma1 = norm(loc=gamma1, scale=taus[3])
+    proposal_gamma0 = norm(loc=gamma0, scale=taus[2])
+    proposal_gamma1 = norm(loc=gamma1, scale=taus[3])
 
     for i in tqdm(range(1, N)):
         # sample a beta
@@ -216,7 +212,6 @@ def Gibbs_MH(X, y, B, n, higher_yes_col, absences_col, age_col, taus, thin, loc=
         absences = poisson.rvs(mu)
 
         # sample alpha0, alpha1
-        #proposal_alpha0 = norm(loc=alpha0, scale=taus[0])
         alpha0_star = proposal_alpha0.rvs()
         log_u = np.log(uniform.rvs())
         log_r = (
@@ -227,7 +222,6 @@ def Gibbs_MH(X, y, B, n, higher_yes_col, absences_col, age_col, taus, thin, loc=
             alpha0 = alpha0_star
             accepts_alpha0 += 1
 
-        #proposal_alpha1 = norm(loc=alpha1, scale=taus[1])
         alpha1_star = proposal_alpha1.rvs()
         log_u = np.log(uniform.rvs())
         log_r = (
@@ -239,7 +233,6 @@ def Gibbs_MH(X, y, B, n, higher_yes_col, absences_col, age_col, taus, thin, loc=
             accepts_alpha1 += 1
 
         # sample gamma0, gamma1
-        proposal_gamma0 = norm(loc=gamma0, scale=taus[2])
         gamma0_star = proposal_gamma0.rvs()
         log_u = np.log(uniform.rvs())
         log_r = (
@@ -250,7 +243,6 @@ def Gibbs_MH(X, y, B, n, higher_yes_col, absences_col, age_col, taus, thin, loc=
             gamma0 = gamma0_star
             accepts_gamma0 += 1
 
-        proposal_gamma1 = norm(loc=gamma1, scale=taus[3])
         gamma1_star = proposal_gamma1.rvs()
         log_u = np.log(uniform.rvs())
         log_r = (
