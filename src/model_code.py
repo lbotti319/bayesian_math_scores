@@ -133,7 +133,7 @@ def dist_log_gamma1(gamma1, gamma0, absences, age_missing_absences, loc, scale):
     return np.sum(absences * (gamma0 + gamma1*age_missing_absences) - mu) - (gamma1 - loc)**2 / (2 * scale)
 
 
-def Gibbs_MH(X, y, B, n, higher_yes_col, G2_col, age_col, taus, thin, loc=0, scale=10):
+def Gibbs_MH(X, y, B, n, taus, thin, loc=0, scale=10):
     """
     taus: list with the tau for the proposals of alpha0, alpha1, gamma0, gamma1, in that order
 
@@ -147,42 +147,38 @@ def Gibbs_MH(X, y, B, n, higher_yes_col, G2_col, age_col, taus, thin, loc=0, sca
     sigmas2 = np.zeros(N)
 
     # parameters for missing covariates
-    higher_yes_missing_idx = np.where(np.isnan(X[:, higher_yes_col]))[0]
-    higher_yes_sim = np.zeros((len(higher_yes_missing_idx), N))
-    alphas0, alphas1 = np.zeros(N), np.zeros(N)
+    higher_yes_missing_idx = X['higher_yes'].isna()
+    higher_yes_sim = np.zeros(higher_yes_missing_idx.sum(), N)
+    alphas = np.zeros((2,N))
 
-    G2_missing_idx = np.where(np.isnan(X[:, G2_col]))[0]
-    G2_sim = np.zeros((len(G2_missing_idx), N))
-    gammas0, gammas1 = np.zeros(N), np.zeros(N)
+    G2_missing_idx = X['G2'].isna()
+    # G2_missing_idx.sum() gives the number of Trues 
+    G2_sim = np.zeros((G2_missing_idx.sum(), N))
+    gammas = np.zeros((2, N))
     etas = np.zeros(N)
 
-    # getting ages for the missing values
-    age_missing_higher_yes = X[higher_yes_missing_idx, age_col]
-    age_missing_G2 = X[G2_missing_idx, age_col]
-
     # initialize regression and missing covariates parameters
-    higher_yes = round(np.nanmean(X[:, higher_yes_col]))
+    higher_yes = round(np.nanmean(X['higher_yes']))
     higher_yes_sim[:, 0] = higher_yes
-    X[higher_yes_missing_idx, higher_yes_col] = higher_yes_sim[:, 0]
+    X.loc[higher_yes_missing_idx, 'higher_yes'] = higher_yes_sim[:, 0]
 
-    ages_not_missing = X[~np.isnan(X[:, higher_yes_col]), age_col].reshape(-1, 1)
-    ages_not_missing = np.concatenate([np.ones(ages_not_missing.shape[0]).reshape(-1, 1), ages_not_missing], axis=1)
-    higher_yes_not_missing = X[~np.isnan(X[:, higher_yes_col]), higher_yes_col]
-    model = LogisticRegression().fit(ages_not_missing, higher_yes_not_missing)
-    alpha0, alpha1 = model.coef_.flatten().tolist()
-    alphas0[0], alphas1[0] = alpha0, alpha1
+    model = LogisticRegression(fit_intercept=False).fit(
+        X[['intercept', 'age']][higher_yes_missing_idx == False],
+        X['higher_yes'][higher_yes_missing_idx == False]
+    )
+    alpha = model.coef_.flatten().tolist()
+    alphas[:,0] = alpha
 
-    G2 = round(np.nanmean(X[:, G2_col]))
+    G2 = round(np.nanmean(X["G2"]))
     G2_sim[:, 0] = G2
-    X[G2_missing_idx, G2_col] = G2_sim[:, 0]
+    X.loc[G2_missing_idx, "G2"] = G2_sim[:, 0]
 
-    ages_not_missing = X[~np.isnan(X[:, G2_col]), age_col].reshape(-1, 1)
-    ages_G2 = ages_not_missing.copy()
-    ages_not_missing = np.concatenate([np.ones(ages_not_missing.shape[0]).reshape(-1, 1), ages_not_missing], axis=1)
-    G2_not_missing = X[~np.isnan(X[:, G2_col]), G2_col]
-    model = LinearRegression().fit(ages_not_missing, G2_not_missing)
-    gamma0, gamma1 = model.coef_.flatten().tolist()
-    gammas0[0], gammas1[0] = gamma0, gamma1
+    model = LinearRegression(fit_intercept=False).fit(
+        X[['intercept', 'age']][G2_missing_idx == False], 
+        X['G2'][G2_missing_idx == False]
+    )
+    gamma = model.coef_.flatten().tolist()
+    gammas[:,0] = gamma 
 
     reg = sm.OLS(y, X)
     res = reg.fit()
@@ -192,7 +188,7 @@ def Gibbs_MH(X, y, B, n, higher_yes_col, G2_col, age_col, taus, thin, loc=0, sca
     betas[:, 0] = beta_hat.copy()
     sigmas2[0] = sigma2
 
-    accepts_alpha0, accepts_alpha1 = 0, 0
+    accepts_alpha, accepts_gamma = 0, 0
     ##################################################
 
     ############ Sampling Gibbs + MH #################
@@ -210,49 +206,30 @@ def Gibbs_MH(X, y, B, n, higher_yes_col, G2_col, age_col, taus, thin, loc=0, sca
         p = np.exp(alpha0 + alpha1 * age_missing_higher_yes) / (1 + np.exp(alpha0 + alpha1 * age_missing_higher_yes))
         higher_yes = bernoulli.rvs(p)
         # sample the missing G2s
-        mu = gamma0 + gamma1 * age_missing_G2
-        G2s = norm.rvs(loc=mu, scale=np.sqrt(etas[i-1]))
+        mu = X[['intercept', 'age']][G2_missing_idx] * np.matrix(gammas[:,i-1]).T
+        G2s =  mvnorm.rvs(mean=np.array(mu)[:,0], cov=etas[i-1])
 
 
-        # sample alpha0, alpha1
-        alpha0_star = proposal_alpha0.rvs()
-        log_u = np.log(uniform.rvs())
-        log_r = (
-                dist_log_alpha0(alpha0_star, alpha1, higher_yes_sim[:, i-1], age_missing_higher_yes, loc, scale) -
-                dist_log_alpha0(alpha0, alpha1, higher_yes_sim[:, i-1], age_missing_higher_yes, loc, scale)
-        )
-        if log_u < log_r:
-            alpha0 = alpha0_star
-            accepts_alpha0 += 1
-
-        alpha1_star = proposal_alpha1.rvs()
-        log_u = np.log(uniform.rvs())
-        log_r = (
-                dist_log_alpha1(alpha1_star, alphas0[i-1], higher_yes_sim[:, i-1], age_missing_higher_yes, loc, scale) -
-                dist_log_alpha1(alpha1, alphas0[i-1], higher_yes_sim[:, i-1], age_missing_higher_yes, loc, scale)
-        )
-        if log_u < log_r:
-            alpha1 = alpha1_star
-            accepts_alpha1 += 1
-
-        # sample gamma0, gamma1
-        g0_mean = np.mean(X[:, G2_col] - gammas1[i-1]*X[:, age_col])
-        g0_var = etas[i-1] / len(X[:, G2_col])
-        gamma0 = norm.rvs(
-            loc=g0_mean,
-            scale=np.sqrt(g0_var)
+        # sample alpha
+        # alpha_mean = 
+        # alpha_cov = 
+        # change to alpha if we don't need an MH step
+        alpha_star = mvnorm.rvs(
+            mean=alpha_mean,
+            cov=alpha_cov
         )
 
-        g1_mean = np.sum(X[:, age_col]*(X[:, G2_col] - gammas0[i-1])) / np.sum(X[:, age_col]**2)
-        g1_var = etas[i-1] / np.sum(X[:, age_col]**2)
-        gamma1 = norm.rvs(
-            loc=g1_mean,
-            scale=np.sqrt(g1_var)
+        gamma_mean = 
+        gamma_var =
+        # Change to gamma if we don't need the MH step
+        gamma_star = mvnorm.rvs(
+            mean=gamma_mean,
+            cov=gamma_var
         )
 
 
-        eta_a = len(X[:, G2_col]) /2
-        eta_b = np.sum((X[:, G2_col] - gammas0[i-1] - gammas1[i-1]*X[:, age_col])**2)/2
+        eta_a = len(X[:, "G2"]) /2
+        eta_b = np.sum((X[:, "G2"] - gammas0[i-1] - gammas1[i-1]*X[:, "age"])**2)/2
         # print(eta_a, eta_b)
         eta = invgamma.rvs(eta_a, scale=eta_b)
 
@@ -261,15 +238,17 @@ def Gibbs_MH(X, y, B, n, higher_yes_col, G2_col, age_col, taus, thin, loc=0, sca
         sigmas2[i] = sigma2
         higher_yes_sim[:, i] = higher_yes
         G2_sim[:, i] = G2s
-        alphas0[i] = alpha0
-        alphas1[i] = alpha1
-        gammas0[i] = gamma0
-        gammas1[i] = gamma1
+        alphas[:, i] = alpha
+        gammas[:, i] = gamma
         etas[i] = eta
-        X[higher_yes_missing_idx, higher_yes_col] = higher_yes
-        X[G2_missing_idx, G2_col] = G2s
-        beta_hat = np.linalg.inv(X.T.dot(X)).dot(X.T).dot(y)
-        vbeta = np.linalg.inv(X.T.dot(X))
+        X.loc[higher_yes_missing_idx, 'higher_yes'] = higher_yes
+        X.loc[G2_missing_idx, 'G2'] = G2s
+        beta_hat = (
+            np.linalg.inv(X.values.T.dot(X.values))
+            .dot(X.values.T)
+            .dot(y)
+        )
+        vbeta = np.linalg.inv(X.values.T.dot(X.values))
     ##################################################
 
     return (betas[:, B * thin:], sigmas2[B * thin:], higher_yes_sim[:, B * thin:], G2_sim[:, B * thin:], alphas0[B * thin:],
