@@ -283,7 +283,7 @@ And the conditional posteriors are
 The Gibbs sample has the following steps:
 
 \begin{enumerate}
-  \item Impute $X_{mis, G2}$ given $\vec\gamma, \eta, X_{obs, GS}, X_{obs, Age}$
+  \item Impute $X_{mis, G2}$ given $\vec\gamma, \eta, X_{mis, Age}$
   \item Impute $X_{mis, Higher}$ given $\alpha_0, \alpha_1, X_{obs, Higher}, X_{obs, Age}$
   \item Draw $(\vec\beta, \sigma^2)$ given $y, \mathbf{X}$
   \item Draw $(\vec{\gamma}, \eta)$ given $X_{obs, GS}, X_{obs, Age}, X_{mis, GS}, X_{mis, Age}$
