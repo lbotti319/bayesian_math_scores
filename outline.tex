@@ -256,13 +256,19 @@ $$p(\eta^2 | \texttt{everything else}) \propto IG \left(
 \newpage
 \section{Appendix B}
 
+\subsubsection{Setup}
+
 Let $y = (y_{mis}, y_{obs})$ and $\mathbf{X} = (\mathbf{X}_{mis}, \mathbf{X}_{obs})$
+
+We assume the distribution of $\vec{Y}$ is
 
 $$Y \sim MVN(\mathbf{X}\vec{\beta}, \sigma^2\mathbf{I})$$
 
 We assume a non-informative prior with $\vec{\beta}$ with a flat prior and $\sigma^2$ with Jeffreys' prior
 
 $$p(\vec{\beta}, \sigma^2) \propto (\sigma^2)^{-1}$$
+
+\vspace{0.25in}
 
 We include two imputation models. First, for missing values of G2, we assume a normal distribution such that
 
@@ -272,29 +278,63 @@ We assume a non-informative prior with $\vec{\gamma}$ with a flat prior and $\et
 
 $$p(\vec{\gamma}, \eta^2) \propto (\eta^2)^{-1}$$
 
-\textbf{TODO: Second, for missing values of Higher, we assume a Bernoulli distribution and use an MH step like in Slide 142 in note set 2 OR use normal approximation like in Slide 208 in note set 1}
+\vspace{0.25in}
 
-Thus the joint posterior is
+Second, for missing values of Higher, we assume a Bernoulli distribution and we use Normal approximation for logistic regression. So the likelihood $\mathcal{L}(y_i|x_i'\vec\alpha, \Phi)$ can be approximated by the normal likelihood $N(z_i, \theta^2_i)$.
 
-And the conditional posteriors are
+\subsubsection{Joint Posterior}
 
-(these should fall out pretty easily)
+Let $\mathbf{\Sigma} = \sigma^2\mathbf{I}$. Thus the joint posterior is
 
-The Gibbs sample has the following steps:
+$$p(\vec\beta, \sigma^2, X_{mis, G2}, X_{mis, Higher}) \propto \mathcal{L}(\vec{Y}|\mathbf{X}\vec\beta, \sigma^2)\mathcal{L}(X_{mis, GS}|\mathbf{X}_{mis, Age}\vec\gamma, \eta^2)\mathcal{L}(X_{i, Higher}|z_i, \theta^2)\pi(\vec\beta, \sigma^2)\pi(\gamma, \eta^2)\pi(z_i, \theta^2)$$
+
+
+$$p(\vec\beta, \sigma^2, X_{mis, G2}, X_{mis, Higher}) \propto |\Sigma|^\frac{-1}{2} exp\left(\frac{-1}{2}(\vec{Y} - \mathbf{X}\vec\beta)^T\mathbf{\Sigma}^{-1}(\vec{Y} - \mathbf{X}\beta)\right)$$ 
+$$|\eta^2\mathbf{I}|^\frac{-1}{2} exp\left(\frac{-1}{2}(X_{mis, GS} - \mathbf{X}_{mis, Age}\vec\gamma)^T\eta^2\mathbf{I}^{-1}(\vec{Y} - \mathbf{X}_{mis, Age}\vec\gamma)\right)$$
+$$(\theta)^\frac{n}{2} exp\left[\frac{-1}{2\theta^2}(X_{i, Higher} - z_i)^2\right](\sigma^2)^{-1}(\eta^2)^{-1} \cdot 1$$
+
+
+
+
+\subsubsection{Conditional Posteriors}
+
+1.
+
+$X_{mis, G2} \sim \vec\gamma, \eta, X_{mis, Age} \sim$
+
+2.
+
+$X_{mis, Higher} \sim\alpha_0, \alpha_1, X_{mis, Age} \sim$
+
+3.
+
+$\vec\beta | \sigma^2, y, \mathbf{X} \sim$
+
+$\sigma^2 | \vec\beta, y, \mathbf{X} \sim$
+
+4.
+$\vec{\gamma}|\eta^2, X_{obs, GS}, X_{obs, Age}, X_{mis, GS}, X_{mis, Age} \sim$
+
+$\eta^2|\vec{\gamma}, X_{obs, GS}, X_{obs, Age}, X_{mis, GS}, X_{mis, Age} \sim$
+
+5.
+
+$\vec\alpha| \theta^2, X_{obs, Higher}, X_{obs, Age}, X_{mis, Higher}, X_{mis, Age} \sim$ 
+
+$\theta^2|\vec\alpha, X_{obs, Higher}, X_{obs, Age}, X_{mis, Higher}, X_{mis, Age} \sim$ 
+
+
+\subsubsection{Gibbs Sampler}
+
+Use the sample mean for G2, "Yes" for Higher (sample mode), and OLS estimates from the complete data for everything else for all starting values. The Gibbs sample has the following steps:
 
 \begin{enumerate}
   \item Impute $X_{mis, G2}$ given $\vec\gamma, \eta, X_{mis, Age}$
-  \item Impute $X_{mis, Higher}$ given $\alpha_0, \alpha_1, X_{obs, Higher}, X_{obs, Age}$
+  \item Impute $X_{mis, Higher}$ given $\alpha_0, \alpha_1, X_{mis, Age}$
   \item Draw $(\vec\beta, \sigma^2)$ given $y, \mathbf{X}$
   \item Draw $(\vec{\gamma}, \eta)$ given $X_{obs, GS}, X_{obs, Age}, X_{mis, GS}, X_{mis, Age}$
-  \item Draw $(\alpha_0, \alpha_1)$ given $X_{obs, Higher}, X_{obs, Age}, X_{mis, Higher}, X_{mis, Age}$  
+  \item Draw $(\vec\alpha, \theta^2)$ given $X_{obs, Higher}, X_{obs, Age}, X_{mis, Higher}, X_{mis, Age}$  
 \end{enumerate}
-
-Notes:
-
-Use the sample mean for G2, "Yes" for Higher (sample mode), and OLS estimates from the complete data for everything else for all starting values
-
-I think the imputation model for Higher should be a normal approximation for logistic regression or an MH step for logistic regression
 
 \newpage
 
