@@ -137,6 +137,90 @@ $$p(\theta|x, y_{obs}) = p(\theta|x, y_{obs}, I)$$
 
 \textbf{Definition:} \textit{missing not at random (MNAR)} -- If the missing data mechanism depends on the missing values. Neither MCAR or MAR holds. The data are missing for reasons that are unknown to us. 
 
+\vspace{0.5in}
+
+\textbf{Hierarchical Model}
+
+We assume a hierarchical model to model our data. We assume that our response, $G3$ grades are normally distributed and independent:
+
+$$\mathbf{G3} \sim MVN(\mathbf{X}\mathbf{\beta}, \sigma^2\mathbf{I})$$
+
+To model the the explanatory variables with missing values, we consider $\texttt{Higher Yes}_i|\texttt{Age}_i$ to be a binary model. The dependence on \texttt{Age} is according to our MAR missing mechanism.
+
+$$\texttt{Higher Yes}_i|\texttt{Age}_i \sim \texttt{Bernoulli}(\phi_i)$$
+
+where
+
+$$\phi_i=\frac{\exp[\alpha_0+\alpha_1\texttt{Age}_i]}{1+\exp[\alpha_0+\alpha_1\texttt{Age}_i]} \in [0,1]$$
+
+And $\alpha_0, \alpha_1$ are given normal priors with large variance.
+
+$$\texttt{Absences}_i|\texttt{Age}_i$$
+
+is considered a count mode. The dependence on age is again according to our MAR missing mechanism. 
+
+$$\texttt{Absences}_i|\texttt{Age}_i \sim \texttt{Poisson}(\mu_i)$$
+
+where
+
+$$\mu_i=\exp[\gamma_0+\gamma_1\texttt{Age}_i]  > 0$$
+
+And $\gamma_0, \gamma_1$ are given normal priors with large variance.
+
+Our parameters are then $\alpha_0, \alpha_1, \gamma_0, \gamma_1, \texttt{Absences}_i, \texttt{Higher Yes}_i, \mathbf{\beta},$ and $\sigma^2$.
+
+The full posterior is:
+
+$$p(\alpha_0, \alpha_1, \gamma_0, \gamma_1, \texttt{Absences}_i, \texttt{Higher Yes}_i, \mathbf{\beta},\sigma^2|\mathbf{G3}, \mathbf{X}_{\texttt{Rest}})$$
+
+$$\propto L(\mathbf{G3}|\alpha_0, \alpha_1, \gamma_0, \gamma_1, \texttt{Absences}_i, \texttt{Higher Yes}_i, \mathbf{\beta},\sigma^2, \mathbf{X}_{\texttt{Rest}})$$
+$$\prod_{i=1}^{m}\pi(\texttt{Absences}_i|\texttt{Age}_i)\prod_{i=1}^{n}\pi(\texttt{Higher Yes}_i|\texttt{Age}_i)\pi(\beta, \sigma^2)\pi(\alpha_0)\pi(\alpha_1)\pi(\gamma_0)\pi(\gamma_1)$$
+
+
+We assume the following priors
+
+$$\pi(\beta, \sigma^2)\propto (\sigma^2)^{-1}$$ and $\alpha_0, \alpha_1, \gamma_0, \gamma_1$ are given $N(0, 100)$.
+
+And so the full posterior is proportional to,
+
+$$(\sigma^2)^{-(n/2+1)}\exp[-\frac{1}{2\sigma^2}(\mathbf{G3}-\mathbf{X}\beta)^T(\mathbf{G3}-\mathbf{X}\beta)]$$
+
+$$\prod_{i=1}^m\frac{(\exp[\gamma_o+\gamma_1\texttt{Age}_i])^{\texttt{Absences}_i}\exp[-\exp[\gamma_o+\gamma_1\texttt{Age}_i]]}{\texttt{Absences}_i}!}$$
+
+$$\prod_{i=1}^{n}(1-\frac{\exp[\alpha_0+\alpha_1\texttt{Age}_i]}{1+\exp[\alpha_0+\alpha_1\texttt{Age}_i]})^{1-\texttt{Higher Yes}_i}(\frac{\exp[\alpha_0+\alpha_1\texttt{Age}_i]}{1+\exp[\alpha_0+\alpha_1\texttt{Age}_i]})^{\texttt{Higher Yes}_i}$$
+
+$$\exp[-\frac{\alpha_0^2}{200}-\frac{\alpha_1^2}{200}-\frac{\gamma_0^2}{200}-\frac{\gamma_1^2}{200}]$$
+
+The full conditionals are
+
+$$p(\sigma^2|\texttt{everything else}) \sim IG(n/2,\frac{1}{2\sigma^2}(\mathbf{G3}-\mathbf{X}\beta)^T(\mathbf{G3}-\mathbf{X}\beta))$$
+
+$$p(\beta|\texttt{everything else}) \sim MVN((\mathbf{X}^T\mathbf{X})^{-1}\mathbf{X}^T\mathbf{G3}, \sigma^2(\mathbf{X}^T\mathbf{X})^{-1})$$
+
+For $i=1,...,m$ where $m$ is the number of missing values in $\texttt{Absences}$:
+
+$$p(\texttt{Absences}_i|\texttt{everything else}) \sim \texttt{Poisson}(\exp[\gamma_0+\gamma_1\texttt{Age}_i])$$
+
+For $i=1,...,n$ where $n$ is the number of missing values in $\texttt{Higher Yes}$:
+
+$$p(\texttt{Higher Yes}_i|\texttt{everything else}) \sim \texttt{Bernoulli}(\frac{\exp[\alpha_0+\alpha_1\texttt{Age}_i]}{1+\exp[\alpha_0+\alpha_1\texttt{Age}_i]})$$
+
+$$p(\alpha_0|\texttt{everything else})$$
+
+$$\propto \prod_{i=1}^{n}(1-\frac{\exp[\alpha_0+\alpha_1\texttt{Age}_i]}{1+\exp[\alpha_0+\alpha_1\texttt{Age}_i]})^{1-\texttt{Higher Yes}_i}(\frac{\exp[\alpha_0+\alpha_1\texttt{Age}_i]}{1+\exp[\alpha_0+\alpha_1\texttt{Age}_i]})^{\texttt{Higher Yes}_i}\exp[-\frac{\alpha_0^2}{200}]$$
+
+$$p(\alpha_1|\texttt{everything else})$$
+
+$$\propto \prod_{i=1}^{n}(1-\frac{\exp[\alpha_0+\alpha_1\texttt{Age}_i]}{1+\exp[\alpha_0+\alpha_1\texttt{Age}_i]})^{1-\texttt{Higher Yes}_i}(\frac{\exp[\alpha_0+\alpha_1\texttt{Age}_i]}{1+\exp[\alpha_0+\alpha_1\texttt{Age}_i]})^{\texttt{Higher Yes}_i}\exp[-\frac{\alpha_1^2}{200}]$$
+
+$$p(\gamma_0|\texttt{everything else})$$
+
+$$\propto \prod_{i=1}^m(\exp[\gamma_0+\gamma_1\texttt{Age}_i])^{\texttt{Absences}_i}\exp[-\exp[\gamma_o+\gamma_1\texttt{Age}_i]]}\exp[-\frac{\gamma_0^2}{200}]$$
+
+$$p(\gamma_1|\texttt{everything else})$$
+
+$$\propto \prod_{i=1}^m(\exp[\gamma_0+\gamma_1\texttt{Age}_i])^{\texttt{Absences}_i}\exp[-\exp[\gamma_o+\gamma_1\texttt{Age}_i]]}\exp[-\frac{\gamma_1^2}{200}]$$
+
 \bibliography{references}
 \bibliographystyle{apalike}
 
