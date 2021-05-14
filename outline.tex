@@ -252,6 +252,52 @@ $$p(\eta^2 | \texttt{everything else}) \propto IG \left(
 \frac{1}{2}\sum_{i=1}^m (\texttt{G2}_i - \gamma_0 - \gamma_1\texttt{Age}_i)^2
 \right)$$
 
+
+\newpage
+\section{Appendix B}
+
+Let $y = (y_{mis}, y_{obs})$ and $\mathbf{X} = (\mathbf{X}_{mis}, \mathbf{X}_{obs})$
+
+$$Y \sim MVN(\mathbf{X}\vec{\beta}, \sigma^2\mathbf{I})$$
+
+We assume a non-informative prior with $\vec{\beta}$ with a flat prior and $\sigma^2$ with Jeffreys' prior
+
+$$p(\vec{\beta}, \sigma^2) \propto (\sigma^2)^{-1}$$
+
+We include two imputation models. First, for missing values of G2, we assume a normal distribution such that
+
+$$X_{G2} \sim MVN(\mathbf{X}_{Age}\vec{\gamma}, \eta^2\mathbf{I})$$
+
+We assume a non-informative prior with $\vec{\gamma}$ with a flat prior and $\eta^2$ with Jeffreys' prior
+
+$$p(\vec{\gamma}, \eta^2) \propto (\eta^2)^{-1}$$
+
+\textbf{TODO: Second, for missing values of Higher, we assume a Bernoulli distribution and use an MH step like in Slide 142 in note set 2 OR use normal approximation like in Slide 208 in note set 1}
+
+Thus the joint posterior is
+
+And the conditional posteriors are
+
+(these should fall out pretty easily)
+
+The Gibbs sample has the following steps:
+
+\begin{enumerate}
+  \item Impute $X_{mis, G2}$ given $\vec\gamma, \eta, X_{obs, GS}, X_{obs, Age}$
+  \item Impute $X_{mis, Higher}$ given $\alpha_0, \alpha_1, X_{obs, Higher}, X_{obs, Age}$
+  \item Draw $(\vec\beta, \sigma^2)$ given $y, \mathbf{X}$
+  \item Draw $(\vec{\gamma}, \eta)$ given $X_{obs, GS}, X_{obs, Age}, X_{mis, GS}, X_{mis, Age}$
+  \item Draw $(\alpha_0, \alpha_1)$ given $X_{obs, Higher}, X_{obs, Age}, X_{mis, Higher}, X_{mis, Age}$  
+\end{enumerate}
+
+Notes:
+
+Use the sample mean for G2, "Yes" for Higher (sample mode), and OLS estimates from the complete data for everything else for all starting values
+
+I think the imputation model for Higher should be a normal approximation for logistic regression or an MH step for logistic regression
+
+\newpage
+
 \bibliography{references}
 \bibliographystyle{apalike}
 
