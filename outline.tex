@@ -282,59 +282,73 @@ $$p(\vec{\gamma}, \eta^2) \propto (\eta^2)^{-1}$$
 
 Second, for missing values of Higher, we assume a Bernoulli distribution and we use Normal approximation for logistic regression. So the likelihood $\mathcal{L}(y_i|x_i'\vec\alpha, \Phi)$ can be approximated by the normal likelihood $N(z_i, \theta^2_i)$.
 
-\subsubsection{Joint Posterior}
+\subsubsection{Sampling Procedure}
 
-Let $\mathbf{\Sigma} = \sigma^2\mathbf{I}$. Thus the joint posterior is
+The sampling procedure is similar to an EM algorithm. There are imputation steps and then conditional posterior steps. Use the sample mean for G2, "Yes" for Higher (sample mode), and OLS estimates from the complete data for everything else for all starting values. The Gibbs sample has the following steps:
 
-$$p(\vec\beta, \sigma^2, X_{mis, G2}, X_{mis, Higher}) \propto \mathcal{L}(\vec{Y}|\mathbf{X}\vec\beta, \sigma^2)\mathcal{L}(X_{mis, GS}|\mathbf{X}_{mis, Age}\vec\gamma, \eta^2)\mathcal{L}(X_{i, Higher}|z_i, \theta^2)\pi(\vec\beta, \sigma^2)\pi(\gamma, \eta^2)\pi(z_i, \theta^2)$$
+\vspace{0.25in}
 
+\textbf{Imputation step 1.} $X_{mis, G2}|\vec\gamma, \eta, X_{mis, Age}$
 
-$$p(\vec\beta, \sigma^2, X_{mis, G2}, X_{mis, Higher}) \propto |\Sigma|^\frac{-1}{2} exp\left(\frac{-1}{2}(\vec{Y} - \mathbf{X}\vec\beta)^T\mathbf{\Sigma}^{-1}(\vec{Y} - \mathbf{X}\beta)\right)$$ 
-$$|\eta^2\mathbf{I}|^\frac{-1}{2} exp\left(\frac{-1}{2}(X_{mis, GS} - \mathbf{X}_{mis, Age}\vec\gamma)^T\eta^2\mathbf{I}^{-1}(\vec{Y} - \mathbf{X}_{mis, Age}\vec\gamma)\right)$$
-$$(\theta)^\frac{n}{2} exp\left[\frac{-1}{2\theta^2}(X_{i, Higher} - z_i)^2\right](\sigma^2)^{-1}(\eta^2)^{-1} \cdot 1$$
+$$X_{mis, G2}^{(b)}|\vec\gamma^{(b - 1)}, \eta^{2(b - 1)}, X_{mis, Age} \sim MVN(\mathbf{X}\vec{\gamma}^{(b - 1)}, \eta^{2(b - 1)}\mathbf{I})$$
 
+Where $\mathbf{X}$ is a design matrix with $X_{Age}$
 
+This is derived on slides 169-173 in notes set 1
 
+\vspace{0.25in}
 
-\subsubsection{Conditional Posteriors}
+\textbf{Imputation step 2.} $X_{mis, Higher}|\alpha_0, \alpha_1, X_{mis, Age}$
 
-1.
+$$X_{mis, Higher}^{(b)}|\vec\alpha^{(b - 1)}, X_{mis, Age} \sim Bernoulli\left(\frac{exp(\alpha_0 + \alpha_1X_{age})}{1 + exp(\alpha_0 + \alpha_1X_{age})}\right)$$
 
-$X_{mis, G2} \sim \vec\gamma, \eta, X_{mis, Age} \sim$
+\textbf{Conditional posterior 1.} $\vec\beta | \sigma^2, y, \mathbf{X}$
 
-2.
+$$\vec\beta^{(b)} | \sigma^{2(b - 1)}, y, \mathbf{X} \sim MVN((\mathbf{X}^T\mathbf{X})^{-1}\mathbf{X}^T\vec{Y}, \sigma^{2(b - 1)}(\mathbf{X}^T\mathbf{X}^{-1}))$$
 
-$X_{mis, Higher} \sim\alpha_0, \alpha_1, X_{mis, Age} \sim$
+Where $\mathbf{X}$ is a design matrix all predictors.
 
-3.
+This is derived on slides 169-173 in notes set 1
 
-$\vec\beta | \sigma^2, y, \mathbf{X} \sim$
+\vspace{0.25in}
 
-$\sigma^2 | \vec\beta, y, \mathbf{X} \sim$
+\textbf{Conditional posterior 2.} $\sigma^2 | \vec\beta, y, \mathbf{X}$
 
-4.
-$\vec{\gamma}|\eta^2, X_{obs, GS}, X_{obs, Age}, X_{mis, GS}, X_{mis, Age} \sim$
+$$\sigma^{2(b)} | \vec\beta^{(b - 1)}, y, \mathbf{X} \sim IG\left(\frac{n - k}{2}, \frac{1}{2}(\vec{Y} - \mathbf{X}\vec{\hat\beta^{(b - 1)}})^T(\vec{Y} - \mathbf{X}\vec{\hat\beta^{(b - 1)}})\right)$$
 
-$\eta^2|\vec{\gamma}, X_{obs, GS}, X_{obs, Age}, X_{mis, GS}, X_{mis, Age} \sim$
+Where $\mathbf{X}$ is a design matrix all predictors.
 
-5.
+This is derived on slides 169-173 in notes set 1
 
-$\vec\alpha| \theta^2, X_{obs, Higher}, X_{obs, Age}, X_{mis, Higher}, X_{mis, Age} \sim$ 
+\vspace{0.25in}
 
-$\theta^2|\vec\alpha, X_{obs, Higher}, X_{obs, Age}, X_{mis, Higher}, X_{mis, Age} \sim$ 
+\textbf{Conditional posterior 3.} $\vec{\gamma}|\eta^2, X_{obs, GS}, X_{obs, Age}, X_{mis, GS}, X_{mis, Age}$
 
+$$\vec{\gamma}^{(b)}|\eta^{2(b - 1)}, X_{obs, GS}, X_{obs, Age}, X_{mis, GS}, X_{mis, Age} \sim MVN((\mathbf{X}^T\mathbf{X})^{-1}\mathbf{X}^T\vec{X}_{G2}, \eta^{2(b - 1)}(\mathbf{X}^T\mathbf{X}^{-1}))$$
 
-\subsubsection{Gibbs Sampler}
+Where $\mathbf{X}$ is a design matrix with $X_{Age}$
 
-Use the sample mean for G2, "Yes" for Higher (sample mode), and OLS estimates from the complete data for everything else for all starting values. The Gibbs sample has the following steps:
+This is derived on slides 169-173 in notes set 1
 
-\begin{enumerate}
-  \item Impute $X_{mis, G2}$ given $\vec\gamma, \eta, X_{mis, Age}$
-  \item Impute $X_{mis, Higher}$ given $\alpha_0, \alpha_1, X_{mis, Age}$
-  \item Draw $(\vec\beta, \sigma^2)$ given $y, \mathbf{X}$
-  \item Draw $(\vec{\gamma}, \eta)$ given $X_{obs, GS}, X_{obs, Age}, X_{mis, GS}, X_{mis, Age}$
-  \item Draw $(\vec\alpha, \theta^2)$ given $X_{obs, Higher}, X_{obs, Age}, X_{mis, Higher}, X_{mis, Age}$  
-\end{enumerate}
+\vspace{0.25in}
+
+\textbf{Conditional posterior 4.} $\eta^2|\vec{\gamma}, X_{obs, GS}, X_{obs, Age}, X_{mis, GS}, X_{mis, Age}$
+
+$$\eta^{2(b)}|\vec{\gamma}^{(b - 1)}, X_{obs, GS}, X_{obs, Age}, X_{mis, GS}, X_{mis, Age} \sim IG\left(\frac{n - k}{2}, \frac{1}{2}(\vec{X}_{G2} - \mathbf{X}\vec{\hat\gamma^{(b - 1)}})^T(\vec{X}_{G2} - \mathbf{X}\vec{\hat\gamma^{(b - 1)}})\right)$$
+
+Where $\mathbf{X}$ is a design matrix with $X_{Age}$
+
+This is derived on slides 169-173 in notes set 1
+
+\vspace{0.25in}
+
+\textbf{Conditional posterior 5.} $\vec\alpha| \theta^2, X_{obs, Higher}, X_{obs, Age}, X_{mis, Higher}, X_{mis, Age}$
+
+$$\vec\alpha^{(b)}|  X_{obs, Higher}, X_{obs, Age}, X_{mis, Higher}, X_{mis, Age} \sim MVN(\hat{\vec\alpha}, V_{\alpha})$$
+
+Where $\hat{\vec\alpha}$ is the posterior mode found through Newton-Raphson and $V_{\alpha}$ is the last working variance from iterative solution to the posterior mode
+
+This is derived on slides 206-208 in notes set 1.
 
 \newpage
 
