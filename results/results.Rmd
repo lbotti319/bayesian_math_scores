@@ -23,7 +23,10 @@ theme_set(theme_minimal())
 ## Load Data
 
 ```{r}
-scenarios_order <- c("No missing", "MCAR 0.05", "MCAR 0.10", "MCAR 0.25", "MCAR 0.50")
+scenarios_order <- c("No missing", "MCAR 0.05", "MCAR 0.10", "MCAR 0.25", "MCAR 0.50", "MNAR")
+
+
+read_csv(here::here("results", "04_results_thinned.csv"))
 
 all_results <- bind_rows(
   "No missing" = read_csv(here::here("results", "01_beta_dists.csv")),
@@ -31,6 +34,15 @@ all_results <- bind_rows(
   "MCAR 0.10" = read_csv(here::here("results", "02_dists_0.1.csv")),
   "MCAR 0.25" = read_csv(here::here("results", "02_dists_0.25.csv")),
   "MCAR 0.50" = read_csv(here::here("results", "02_dists_0.5.csv")),
+  "MNAR" = read_csv(here::here("results", "04_results_thinned.csv")) %>%
+    select(intercept = beta_intercept,
+           age = beta_age,
+           sex_M = beta_sex_M,
+           failures = beta_failures,
+           higher_yes = beta_higher_yes,
+           Medu = beta_Medu,
+           absences = beta_absences,
+           G2 = beta_G2),
   .id = "scenario"
 )  %>%
   pivot_longer(
