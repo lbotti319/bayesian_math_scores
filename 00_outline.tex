@@ -137,6 +137,221 @@ $$p(\theta|x, y_{obs}) = p(\theta|x, y_{obs}, I)$$
 
 \textbf{Definition:} \textit{missing not at random (MNAR)} -- If the missing data mechanism depends on the missing values. Neither MCAR or MAR holds. The data are missing for reasons that are unknown to us. 
 
+\vspace{0.5in}
+
+\textbf{Hierarchical Model}
+
+We assume a hierarchical model to model our data. We assume that our response, $G3$ grades are normally distributed and independent:
+
+$$\mathbf{G3} \sim MVN(\mathbf{X}\mathbf{\beta}, \sigma^2\mathbf{I})$$
+
+To model the the explanatory variables with missing values, we consider $\texttt{Higher Yes}_i|\texttt{Age}_i$ to be a binary model. The dependence on \texttt{Age} is according to our MAR missing mechanism.
+
+$$\texttt{Higher Yes}_i|\texttt{Age}_i \sim \texttt{Bernoulli}(\phi_i)$$
+
+where
+
+$$\phi_i=\frac{\exp[\alpha_0+\alpha_1\texttt{Age}_i]}{1+\exp[\alpha_0+\alpha_1\texttt{Age}_i]} \in [0,1]$$
+
+And $\alpha_0, \alpha_1$ are given normal priors with large variance.
+
+$$\texttt{Absences}_i|\texttt{Age}_i$$
+
+is considered a count mode. The dependence on age is again according to our MAR missing mechanism. 
+
+$$\texttt{G2}_i|\texttt{Age}_i \sim \texttt{Normal}(\mu_i, \eta^2)$$
+
+where
+
+$$\mu_i=\exp[\gamma_0+\gamma_1\texttt{Age}_i]  > 0$$
+
+And $\gamma_0, \gamma_1$ are given normal priors with large variance.
+
+Our parameters are then $\alpha_0, \alpha_1, \gamma_0, \gamma_1, \eta^2, \texttt{G2}_i, \texttt{Higher Yes}_i, \mathbf{\beta},$ and $\sigma^2$.
+
+The full posterior is:
+
+$$p(\alpha_0, \alpha_1, \gamma_0, \gamma_1, \eta^2, \texttt{G2}_i, \texttt{Higher Yes}_i, \mathbf{\beta},\sigma^2|\mathbf{G3}, \mathbf{X}_{\texttt{Rest}})$$
+
+$$\propto L(\mathbf{G3}|\alpha_0, \alpha_1, \gamma_0, \gamma_1, \eta^2, \texttt{G2}_i, \texttt{Higher Yes}_i, \mathbf{\beta},\sigma^2, \mathbf{X}_{\texttt{Rest}})$$
+$$\prod_{i=1}^{m}\pi(\texttt{G2}_i|\texttt{Age}_i)\prod_{i=1}^{n}\pi(\texttt{Higher Yes}_i|\texttt{Age}_i)\pi(\beta, \sigma^2)\pi(\alpha_0)\pi(\alpha_1)\pi(\gamma_0)\pi(\gamma_1)$$
+
+
+We assume the following priors
+
+$$\pi(\beta, \sigma^2)\propto (\sigma^2)^{-1}$$ and $\alpha_0, \alpha_1, \gamma_0, \gamma_1$ are given the flat prior 1. $\eta^2$ is given $(\eta^2)^{-1}$
+
+And so the full posterior is proportional to,
+
+$$(\sigma^2)^{-(n/2+1)}\exp[-\frac{1}{2\sigma^2}(\mathbf{G3}-\mathbf{X}\beta)^T(\mathbf{G3}-\mathbf{X}\beta)]$$
+
+$$\prod_{i=1}^m \frac{1}{(\eta^2)^{1/2}} \exp \left[-\frac{1}{2\eta^2} (\texttt{G2}_i - \gamma_0 - \gamma_1 \texttt{Age}_i)^2 \right]$$
+
+$$\prod_{i=1}^{n}(1-\frac{\exp[\alpha_0+\alpha_1\texttt{Age}_i]}{1+\exp[\alpha_0+\alpha_1\texttt{Age}_i]})^{1-\texttt{Higher Yes}_i}(\frac{\exp[\alpha_0+\alpha_1\texttt{Age}_i]}{1+\exp[\alpha_0+\alpha_1\texttt{Age}_i]})^{\texttt{Higher Yes}_i}$$
+
+$$(\eta^2)^{-1}$$
+
+The full conditionals are
+
+$$p(\sigma^2|\texttt{everything else}) \sim IG(n/2,\frac{1}{2\sigma^2}(\mathbf{G3}-\mathbf{X}\beta)^T(\mathbf{G3}-\mathbf{X}\beta))$$
+
+$$p(\beta|\texttt{everything else}) \sim MVN((\mathbf{X}^T\mathbf{X})^{-1}\mathbf{X}^T\mathbf{G3}, \sigma^2(\mathbf{X}^T\mathbf{X})^{-1})$$
+
+For $i=1,...,m$ where $m$ is the number of missing values in $\texttt{Absences}$:
+
+$$p(\texttt{G2}_i|\texttt{everything else}) \sim \texttt{Normal}(\gamma_0+\gamma_1\texttt{Age}_i, \eta^2)$$
+
+For $i=1,...,n$ where $n$ is the number of missing values in $\texttt{Higher Yes}$:
+
+$$p(\texttt{Higher Yes}_i|\texttt{everything else}) \sim \texttt{Bernoulli}(\frac{\exp[\alpha_0+\alpha_1\texttt{Age}_i]}{1+\exp[\alpha_0+\alpha_1\texttt{Age}_i]})$$
+
+$$p(\alpha_0|\texttt{everything else})$$
+
+$$\propto \prod_{i=1}^{n}(1-\frac{\exp[\alpha_0+\alpha_1\texttt{Age}_i]}{1+\exp[\alpha_0+\alpha_1\texttt{Age}_i]})^{1-\texttt{Higher Yes}_i}(\frac{\exp[\alpha_0+\alpha_1\texttt{Age}_i]}{1+\exp[\alpha_0+\alpha_1\texttt{Age}_i]})^{\texttt{Higher Yes}_i}$$
+
+$$p(\alpha_1|\texttt{everything else})$$
+
+$$\propto \prod_{i=1}^{n}(1-\frac{\exp[\alpha_0+\alpha_1\texttt{Age}_i]}{1+\exp[\alpha_0+\alpha_1\texttt{Age}_i]})^{1-\texttt{Higher Yes}_i}(\frac{\exp[\alpha_0+\alpha_1\texttt{Age}_i]}{1+\exp[\alpha_0+\alpha_1\texttt{Age}_i]})^{\texttt{Higher Yes}_i}$$
+
+$$p(\gamma_0|\texttt{everything else}) \propto \prod_{i=1}^m  \exp \left[-\frac{1}{2\eta^2} (\texttt{G2}_i - \gamma_0 - \gamma_1 \texttt{Age}_i)^2 \right]$$
+
+$$p(\gamma_0 | ...) \propto \exp \left[ -\frac{1}{2\eta^2} \sum (-\gamma_0 + \texttt{G2}_i - \gamma_1 \texttt{Age}_i)^2 \right]$$
+
+$$p(\gamma_0 | ...) \propto \exp \left[ -\frac{1}{2\eta^2} \sum \gamma_0^2 - 2\gamma_0(\texttt{G2}_i - \gamma_1 \texttt{Age}_i) 
++  (\texttt{G2}_i - \gamma_1 \texttt{Age}_i)^2 \right]$$
+
+$$p(\gamma_0 | ...) \propto \exp \left[ -\frac{1}{2\eta^2} (m\gamma_0^2 - 2\gamma_0\sum(\texttt{G2}_i - \gamma_1 \texttt{Age}_i)) \right]$$
+
+$$p(\gamma_0 | ...) \propto \exp \left[ -\frac{m}{2\eta^2} (\gamma_0^2 - \frac{2}{m}\gamma_0\sum(\texttt{G2}_i - \gamma_1 \texttt{Age}_i)) \right]$$
+
+$$\gamma_0 | ... \sim N\left( \frac{\sum(\texttt{G2}_i - \gamma_1 \texttt{Age}_i)}{m}, \frac{\eta^2}{m} \right)$$
+
+$$p(\gamma_1|\texttt{everything else}) \propto \prod_{i=1}^m  \exp \left[-\frac{1}{2\eta^2} (\texttt{G2}_i - \gamma_0 - \gamma_1 \texttt{Age}_i)^2 \right]
+$$
+
+$$p(\gamma_1 | ...) \propto \exp \left[ -\frac{1}{2\eta^2} \sum (- \gamma_1 \texttt{Age}_i + \texttt{G2}_i -\gamma_0 )^2 \right]$$
+
+$$p(\gamma_1 | ...) \propto \exp \left[ -\frac{1}{2\eta^2} \sum (\gamma_1 \texttt{Age}_i)^2 
+-2 (\gamma_1 \texttt{Age}_i)(\texttt{G2}_i -\gamma_0 )
++ (\texttt{G2}_i -\gamma_0 )^2 \right]$$
+
+$$p(\gamma_1 | ...) \propto \exp \left[ -\frac{1}{2\eta^2} 
+(\gamma_1^2 \sum \texttt{Age}_i^2 
+-2 \gamma_1 \sum \texttt{Age}_i(\texttt{G2}_i -\gamma_0 ))\right]$$
+
+$$p(\gamma_1 | ...) \propto \exp \left[ -\frac{\sum\texttt{Age}_i^2}{2\eta^2} 
+(\gamma_1^2
+-2 \gamma_1 \frac{\sum \texttt{Age}_i(\texttt{G2}_i -\gamma_0 )}{\sum\texttt{Age}_i^2})\right]$$
+
+$$\gamma_1 | ... \sim N\left( 
+\frac{\sum \texttt{Age}_i(\texttt{G2}_i -\gamma_0 )}{\sum\texttt{Age}_i^2},
+\frac{\eta^2}{\sum\texttt{Age}_i^2} \right)$$
+
+$$p(\eta^2 | \texttt{everything else}) \propto IG \left(
+\frac{m}{2},
+\frac{1}{2}\sum_{i=1}^m (\texttt{G2}_i - \gamma_0 - \gamma_1\texttt{Age}_i)^2
+\right)$$
+
+
+\newpage
+\section{Appendix B}
+
+\subsubsection{Setup}
+
+Let $y = (y_{mis}, y_{obs})$ and $\mathbf{X} = (\mathbf{X}_{mis}, \mathbf{X}_{obs})$
+
+We assume the distribution of $\vec{Y}$ is
+
+$$Y \sim MVN(\mathbf{X}\vec{\beta}, \sigma^2\mathbf{I})$$
+
+We assume a non-informative prior with $\vec{\beta}$ with a flat prior and $\sigma^2$ with Jeffreys' prior
+
+$$p(\vec{\beta}, \sigma^2) \propto (\sigma^2)^{-1}$$
+
+\vspace{0.25in}
+
+We include two imputation models. First, for missing values of G2, we assume a normal distribution such that
+
+$$X_{G2} \sim MVN(\mathbf{X}_{Age}\vec{\gamma}, \eta^2\mathbf{I})$$
+
+We assume a non-informative prior with $\vec{\gamma}$ with a flat prior and $\eta^2$ with Jeffreys' prior
+
+$$p(\vec{\gamma}, \eta^2) \propto (\eta^2)^{-1}$$
+
+\vspace{0.25in}
+
+Second, for missing values of Higher, we assume a Bernoulli distribution and we use Normal approximation for logistic regression. So the likelihood $\mathcal{L}(y_i|x_i'\vec\alpha, \Phi)$ can be approximated by the normal likelihood $N(z_i, \theta^2_i)$.
+
+\subsubsection{Sampling Procedure}
+
+The sampling procedure is similar to an EM algorithm. There are imputation steps and then conditional posterior steps. Use the sample mean for G2, "Yes" for Higher (sample mode), and OLS estimates from the complete data for everything else for all starting values. The Gibbs sample has the following steps:
+
+\vspace{0.25in}
+
+\textbf{Imputation step 1.} $X_{mis, G2}|\vec\gamma, \eta, X_{mis, Age}$
+
+$$X_{mis, G2}^{(b)}|\vec\gamma^{(b - 1)}, \eta^{2(b - 1)}, X_{mis, Age} \sim MVN(\mathbf{X}\vec{\gamma}^{(b - 1)}, \eta^{2(b - 1)}\mathbf{I})$$
+
+Where $\mathbf{X}$ is a design matrix with $X_{Age}$
+
+This is derived on slides 169-173 in notes set 1
+
+\vspace{0.25in}
+
+\textbf{Imputation step 2.} $X_{mis, Higher}|\alpha_0, \alpha_1, X_{mis, Age}$
+
+$$X_{mis, Higher}^{(b)}|\vec\alpha^{(b - 1)}, X_{mis, Age} \sim Bernoulli\left(\frac{exp(\alpha_0 + \alpha_1X_{age})}{1 + exp(\alpha_0 + \alpha_1X_{age})}\right)$$
+
+\textbf{Conditional posterior 1.} $\vec\beta | \sigma^2, y, \mathbf{X}$
+
+$$\vec\beta^{(b)} | \sigma^{2(b - 1)}, y, \mathbf{X} \sim MVN((\mathbf{X}^T\mathbf{X})^{-1}\mathbf{X}^T\vec{Y}, \sigma^{2(b - 1)}(\mathbf{X}^T\mathbf{X}^{-1}))$$
+
+Where $\mathbf{X}$ is a design matrix all predictors.
+
+This is derived on slides 169-173 in notes set 1
+
+\vspace{0.25in}
+
+\textbf{Conditional posterior 2.} $\sigma^2 | \vec\beta, y, \mathbf{X}$
+
+$$\sigma^{2(b)} | \vec\beta^{(b - 1)}, y, \mathbf{X} \sim IG\left(\frac{n - k}{2}, \frac{1}{2}(\vec{Y} - \mathbf{X}\vec{\hat\beta^{(b - 1)}})^T(\vec{Y} - \mathbf{X}\vec{\hat\beta^{(b - 1)}})\right)$$
+
+Where $\mathbf{X}$ is a design matrix all predictors.
+
+This is derived on slides 169-173 in notes set 1
+
+\vspace{0.25in}
+
+\textbf{Conditional posterior 3.} $\vec{\gamma}|\eta^2, X_{obs, GS}, X_{obs, Age}, X_{mis, GS}, X_{mis, Age}$
+
+$$\vec{\gamma}^{(b)}|\eta^{2(b - 1)}, X_{obs, GS}, X_{obs, Age}, X_{mis, GS}, X_{mis, Age} \sim MVN((\mathbf{X}^T\mathbf{X})^{-1}\mathbf{X}^T\vec{X}_{G2}, \eta^{2(b - 1)}(\mathbf{X}^T\mathbf{X}^{-1}))$$
+
+Where $\mathbf{X}$ is a design matrix with $X_{Age}$
+
+This is derived on slides 169-173 in notes set 1
+
+\vspace{0.25in}
+
+\textbf{Conditional posterior 4.} $\eta^2|\vec{\gamma}, X_{obs, GS}, X_{obs, Age}, X_{mis, GS}, X_{mis, Age}$
+
+$$\eta^{2(b)}|\vec{\gamma}^{(b - 1)}, X_{obs, GS}, X_{obs, Age}, X_{mis, GS}, X_{mis, Age} \sim IG\left(\frac{n - k}{2}, \frac{1}{2}(\vec{X}_{G2} - \mathbf{X}\vec{\hat\gamma^{(b - 1)}})^T(\vec{X}_{G2} - \mathbf{X}\vec{\hat\gamma^{(b - 1)}})\right)$$
+
+Where $\mathbf{X}$ is a design matrix with $X_{Age}$
+
+This is derived on slides 169-173 in notes set 1
+
+\vspace{0.25in}
+
+\textbf{Conditional posterior 5.} $\vec\alpha| \theta^2, X_{obs, Higher}, X_{obs, Age}, X_{mis, Higher}, X_{mis, Age}$
+
+$$\vec\alpha^{(b)}|  X_{obs, Higher}, X_{obs, Age}, X_{mis, Higher}, X_{mis, Age} \sim MVN(\hat{\vec\alpha}, V_{\alpha})$$
+
+Where $\hat{\vec\alpha}$ is the posterior mode found through Newton-Raphson and $V_{\alpha}$ is the last working variance from iterative solution to the posterior mode
+
+This is derived on slides 206-208 in notes set 1.
+
+\newpage
+
 \bibliography{references}
 \bibliographystyle{apalike}
 
