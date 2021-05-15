@@ -7,8 +7,8 @@
 # LaTeX files
 *.bbl
 *.zip
+*.log
 
 # Python files
 __pycache__
 .ipynb_checkpoints
-
