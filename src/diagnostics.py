@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import pymc3 as pm
+from statsmodels.tsa.stattools import acf 
 
 
 def MCMC_diagnostics(chain, param):
@@ -13,19 +14,24 @@ def MCMC_diagnostics(chain, param):
     plt.hist(chain, bins=60)
     plt.title(f'Histogram {param}')
 
-    plt.subplot(413)
-    gw_plot = pm.geweke(chain)
-    plt.scatter(gw_plot[:,0],gw_plot[:,1])
-    plt.axhline(-1.98, c='r')
-    plt.axhline(1.98, c='r')
-    
-    plt.ylim(-2.5,2.5)
-    plt.title(f'Geweke Plot Comparing first 10% and Slices of the Last 50% of Chain {param}')
 
-    plt.subplot(414)
+
+    plt.subplot(413)
     acf_values = acf(chain)
     plt.scatter(range(0, len(acf_values)), acf_values)
     plt.title(f'ACF {param}')
+    
+    try:
+        plt.subplot(414)
+        gw_plot = pm.geweke(chain)
+        plt.scatter(gw_plot[:,0],gw_plot[:,1])
+        plt.axhline(-1.98, c='r')
+        plt.axhline(1.98, c='r')
+
+        plt.ylim(-2.5,2.5)
+        plt.title(f'Geweke Plot Comparing first 10% and Slices of the Last 50% of Chain {param}')
+    except AttributeError:
+        pass
     
     plt.tight_layout()
     plt.show()
