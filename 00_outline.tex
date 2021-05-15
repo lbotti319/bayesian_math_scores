@@ -8,21 +8,21 @@
 
 Missing data affect analysis in almost every quantitative discipline. Most common statistical methods are demonstrated on pristine data sets and the incorrect application of common statistical methods to data sets with missingness can lead to biased results. 
 
-This paper starts with a complete data and creates missing data under different types of missingness. Bayesian data augmentation methods are used to impute the missing values and estimate a linear regression model on the imputed data. 
+This paper starts with a complete data set and creates missing data under different types of missingness. Bayesian data augmentation methods are used to impute the missing values and estimate a linear regression model on the imputed data. The results are then compared for the similarity of posterior samples and inference.
 
-todo(aaron): introduce the data set
+We use the Student Performance Data Set from the UCI Machine Learning Repository \cite{Cortez2008}. The data set contains 395 observations and 33 variables about student achievement in math at two Portuguese secondary schools. Our focus is regressing G3, the final grade, on a set of useful predictors.  
 
-The remainder of the paper is organized as follows: Section 2...
+The remainder of the paper is organized as follows: Section 2 describes the methods for creating missing data and the regression model for analysis. Section 3 presents the results of our analysis. Section 4 discusses the results, clarifies limitations of the analysis, and suggests follow-up analysis. 
 
 \section{Methods}
 
-Our objective is to estimate a linear regression model with final grade as the dependent variable and some set of predictors, but our focus is on missing data methods. Accordingly, we pick one regression specification and carry through the entire project. 
+\subsection{Regression Model}
 
-Based on theory, we chose a subset of potential predictors. First period grade, second period grade, number of previous class failures, age, sex, whether the student to take higher education, parental education, parental jobs, and number of absences were all considered. Mother's education, father's education, mother's job, and father's job were all highly correlated. Accordingly, we only include mother's education. First period grade and second period grade are also highly correlated. Accordingly, we only include second period grade because it is closer to the final grade. 
+Our objective is to estimate a linear regression model with final math grade as the dependent variable conditional some set of predictors, but our focus is on missing data methods. Accordingly, we pick one regression specification and carry that specification through the entire project. 
 
-Our final specification is 
+Based on theory, we chose a subset of potential predictors. First period grade, second period grade, number of previous class failures, age, sex, whether the student to take higher education, parental education, parental jobs, and number of absences were all considered. Mother's education, father's education, mother's job, and father's job are all highly correlated. Accordingly, we only include mother's education. First period grade and second period grade are also highly correlated. Accordingly, we only include second period grade because it is closer to the final grade. Our final specification is 
 
-G3 ~ age + failures + sex + higher + Medu + absences + G1 + G2
+$$G3 = \beta_0 + \beta_1 age + \beta_2 failures + \beta_3 sex + \beta_4 higher + \beta_5 Medu + \beta_6 absences + \beta_7 G2$$
 
 \subsection{Creating Missing Data}
 
@@ -32,32 +32,25 @@ For our evalaution, we compare methods applied to obscured data sets with differ
 
 We will consider missing completely at random (MCAR), missing at random (MAR), and missing not at random (MNAR). Defintions are available in Appendix A. 
 
-MCAR
-MAR
-MNAR
+\subsubsection{MCAR}
 
-It is important to note that we know the type of missingness before appying our methods, which is a best case scenario. \cite{vanBurren2018} notes that there are tests to determine MCAR vs. MAR but they aren't widely used. There are no tests to compare MAR vs. MNAR.
+We use complete case analysis when observations are MCAR. We simply drop varying proportions of observations and then fit a vanilla Bayesian linear regression model on the remaining observations. 
 
-\subsection{1. MCAR}
+\subsubsection{MAR}
 
-Randomly drop values. 
+More sophisticated methods are needed to create MAR missingness and to analyze data with MAR missingness. We add missing values to the binary variable higher by applying different probabilities of missingness based on less than 18 years old and 18 or older. We add missing values to G2 by by applying different probabilities of missingness based on less than 18 years old and 18 or older. Here, the values are no longer missing completely at random. We can impute the missing values but we do not need to model the missingness mechanism. 
 
-$$p(I| \phi)$$
-
-In this case, $\phi$ will just be a probability.
-
-\subsection{2. MAR with ignorable missing data mechanism}
-
-Drop values conditional on variables that will be included in the final model of interest. Furthermore, the prior distribution for $\theta$ and $\phi$ need to be independent. 
+We use Bayesian logistic regression with normal approximation with age as the only predictor to impute missing values of higher. We use a flat prior for this model. We use Bayesian linear regression with age as the only predictor to impute missing values of G2. 
 
 $$p(I|y_{obs}, y_{mis}, \phi) = p(I|y_{obs}, \phi)$$
 
-Note: we can model the missingness mechanism to try to improve the model.
+\subsubsection{MNAR}
 
-\subsection{3. MNAR/MAR with non-ignorable missing data mechanism}
+It is difficult to correctly model a missingness mechanism outside of certain cases like complex survey designs. Instead, we create MNAR missingness and then apply MAR methods to examine how MNAR data can affect linear regression analysis. To create MNAR data for higher, we give higher probabilities of missingness to observations that are "yes" than observations that are "no". To create MNAR data for G2, we set the probability of missingness conditional on age with the following
 
-Create missingness conditional on the values that are missing. 
+$$p(missing_i) = \frac{exp(\alpha_0 + \alpha_1 Age_i)}{1 + exp(\alpha_0 + \alpha_1 Age_i)}$$
 
+It is important to note that we know the type of missingness before applying our methods, which is a best-case scenario. \cite{vanBurren2018} notes that there are tests to determine MCAR vs. MAR but they aren't widely used. There are no tests to compare MAR vs. MNAR.
 
 \section{Results}
 

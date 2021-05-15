@@ -25,16 +25,13 @@ theme_set(theme_minimal())
 ```{r}
 scenarios_order <- c("No missing", "MCAR 0.05", "MCAR 0.10", "MCAR 0.25", "MCAR 0.50", "MNAR")
 
-
-read_csv(here::here("results", "04_results_thinned.csv"))
-
 all_results <- bind_rows(
   "No missing" = read_csv(here::here("results", "01_beta_dists.csv")),
   "MCAR 0.05" = read_csv(here::here("results", "02_dists_0.05.csv")),
   "MCAR 0.10" = read_csv(here::here("results", "02_dists_0.1.csv")),
   "MCAR 0.25" = read_csv(here::here("results", "02_dists_0.25.csv")),
   "MCAR 0.50" = read_csv(here::here("results", "02_dists_0.5.csv")),
-  "MNAR" = read_csv(here::here("results", "04_results_thinned.csv")) %>%
+  "MNAR" = read_csv(here::here("results", "04_mnar_results.csv")) %>%
     select(intercept = beta_intercept,
            age = beta_age,
            sex_M = beta_sex_M,
