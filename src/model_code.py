@@ -103,37 +103,10 @@ def running_mean(x):
 ###################################################################
 
 
-def MH_step(param, log_target, proposal, accepts_param, *args):
-    param_star = proposal.rvs()
-    log_u = np.log(uniform.rvs())
-    log_r = log_target(param_star, *args) - log_target(param, *args)
-    if log_u < log_r:
-        param = param_star
-        accepts_param += 1
-    return param, accepts_param
 
 
-def dist_log_alpha0(alpha0, alpha1, higher_yes, age_missing_higher_yes, loc, scale):
-    p = np.exp(alpha0 + alpha1*age_missing_higher_yes) / (1 + np.exp(alpha0 + alpha1*age_missing_higher_yes))
-    return np.sum((1 - higher_yes) * np.log(1 - p) + higher_yes * np.log(p)) - (alpha0 - loc)**2 / (2 * scale)
 
-
-def dist_log_alpha1(alpha1, alpha0, higher_yes, age_missing_higher_yes, loc, scale):
-    p = np.exp(alpha0 + alpha1*age_missing_higher_yes) / (1 + np.exp(alpha0 + alpha1*age_missing_higher_yes))
-    return np.sum((1 - higher_yes) * np.log(1 - p) + higher_yes * np.log(p)) - (alpha1 - loc)**2 / (2 * scale)
-
-
-def dist_log_gamma0(gamma0, gamma1, absences, age_missing_absences, loc, scale):
-    mu = np.exp(gamma0 + gamma1*age_missing_absences)
-    return np.sum(absences * (gamma0 + gamma1*age_missing_absences) - mu) - (gamma0 - loc)**2 / (2 * scale)
-
-
-def dist_log_gamma1(gamma1, gamma0, absences, age_missing_absences, loc, scale):
-    mu = np.exp(gamma0 + gamma1*age_missing_absences)
-    return np.sum(absences * (gamma0 + gamma1*age_missing_absences) - mu) - (gamma1 - loc)**2 / (2 * scale)
-
-
-def Gibbs_MH(X, y, B, n, thin, loc=0, scale=10):
+def Gibbs_MH(X, y, B, thin, loc=0, scale=10):
     """
     docstring here
     """
@@ -261,23 +234,12 @@ def Gibbs_MH(X, y, B, n, thin, loc=0, scale=10):
             .dot(y)
         )
         vbeta = np.linalg.inv(X.values.T.dot(X.values))
-    ##################################################
 
-    return (betas[:, B:: thin], sigmas2[B:: thin], higher_yes_sim[:, B::thin], G2_sim[:, B::thin], 
+
+    return (betas[:, B::thin], sigmas2[B::thin], higher_yes_sim[:, B::thin], G2_sim[:, B::thin], 
             alphas[:, B::thin], gammas[:,B::thin] , etas[B::thin])
 
-###################################################################
-###################################################################
 
-def gelman_rubin(chains):
-    M = chains.shape[0]
-    N = chains.shape[1]
-    W = np.sum(np.apply_along_axis(np.var, 1, chains)) / M
-    means = np.apply_along_axis(np.mean, 1, chains)
-    double_mean = np.mean(means)
-    B = N * np.sum((means - double_mean)**2) / (M-1)
-    var_hat = (1 - (1/N))* W + (1/N)*B
-    R_hat = np.sqrt(var_hat/W)
-    return R_hat 
+
 
 

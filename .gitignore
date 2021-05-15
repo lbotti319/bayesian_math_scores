@@ -8,6 +8,9 @@
 *.bbl
 *.zip
 *.log
+*.synctex.gz
+*.aux
+
 
 # Python files
 __pycache__
