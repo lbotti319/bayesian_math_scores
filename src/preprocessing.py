@@ -30,6 +30,7 @@ def prepare_data(df):
     encoded_cat_features = transform.get_feature_names(cat_cols)
 
     df_enc = pd.DataFrame.sparse.from_spmatrix(encoded_cats, columns = encoded_cat_features)
+    df_enc[encoded_cat_features] = df_enc[encoded_cat_features].sparse.to_dense()
     
     joined = X.join(df_enc)
     final_features = joined[['intercept', 'age', 'sex_M', 'failures', 'higher_yes', 'Medu', 'absences', 'G2']]
