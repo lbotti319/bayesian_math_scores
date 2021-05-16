@@ -31,15 +31,14 @@ all_results <- bind_rows(
   "MCAR 0.10" = read_csv(here::here("results", "02_dists_0.1.csv")),
   "MCAR 0.25" = read_csv(here::here("results", "02_dists_0.25.csv")),
   "MCAR 0.50" = read_csv(here::here("results", "02_dists_0.5.csv")),
-  "MNAR" = read_csv(here::here("results", "04_mnar_results.csv")) %>%
-    select(intercept = beta_intercept,
-           age = beta_age,
-           sex_M = beta_sex_M,
-           failures = beta_failures,
-           higher_yes = beta_higher_yes,
-           Medu = beta_Medu,
-           absences = beta_absences,
-           G2 = beta_G2),
+  # "MAR 0.05" = read_csv(here::here("results", "03_dists_0.05.csv")),
+  # "MAR 0.10" = read_csv(here::here("results", "03_dists_0.1.csv")),
+  # "MAR 0.25" = read_csv(here::here("results", "03_dists_0.25.csv")),
+  # "MAR 0.50" = read_csv(here::here("results", "03_dists_0.5.csv")),
+  # "MNAR 0.05" = read_csv(here::here("results", "04_dists_0.05.csv")),
+  # "MNAR 0.10" = read_csv(here::here("results", "04_dists_0.1.csv")),
+  # "MNAR 0.25" = read_csv(here::here("results", "04_dists_0.25.csv")),
+  # "MNAR 0.50" = read_csv(here::here("results", "04_dists_0.5.csv")),
   .id = "scenario"
 )  %>%
   pivot_longer(
@@ -52,6 +51,11 @@ all_results <- bind_rows(
 ```
 
 ## Compare Samples
+
+```{r}
+unique(all_results[c("scenario")])
+```
+
 
 ```{r}
 # calculate posterior medians
