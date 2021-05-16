@@ -9,6 +9,10 @@ editor_options:
 knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_chunk$set(message = FALSE)
 knitr::opts_chunk$set(warning = FALSE)
+knitr::opts_chunk$set(fig.path = "../figures/")
+knitr::opts_chunk$set(fig.width = 6.5)
+knitr::opts_chunk$set(fig.height = 4)
+knitr::opts_chunk$set(dev = "png",dpi = 300)
 
 ```
 
@@ -49,15 +53,14 @@ all_results <- bind_rows(
     names_to = "variable", 
     values_to = "beta"
   ) %>%
-  mutate(scenario = factor(scenario, levels = scenarios_order)) %>%
-  filter(variable=="G2" | variable=="higher_yes")
+  mutate(scenario = factor(scenario, levels = scenarios_order)) #%>%
+  #filter(variable=="G2" | variable=="higher_yes")
 
 ```
 
 ## Compare Samples
 
-
-```{r}
+```{r posterior-samples, fig.height = 5}
 # calculate posterior medians
 posterior_medians <- all_results %>%
   group_by(variable, scenario) %>%
@@ -72,7 +75,7 @@ ggplot() +
   geom_point(data = posterior_medians,
              mapping = aes(beta, scenario),
              color = "red") +
-  facet_wrap(~variable, scales = "free_x", ncol=2) +
+  facet_wrap(~variable, scales = "free_x", ncol=4) +
   labs(title = "Posterior Samples",
        subtitle = "Posterior medians in red",
        x = "Beta Samples",
@@ -82,7 +85,7 @@ ggplot() +
 
 ## Compare Posterior Probabilites and Inferences
 
-```{r}
+```{r posterior-probabilities, fig.height = 5}
 # calculate posterior probabilities
 posterior_probabilities <- all_results %>%
   group_by(scenario, variable) %>%
@@ -95,7 +98,7 @@ posterior_probabilities %>%
   geom_col() +
   geom_vline(aes(xintercept = 0.05), color = "red") +
   facet_wrap(~variable,
-             ncol = 2) +
+             ncol = 4) +
   labs(title = "Posterior Probabilities",
        subtitle = "0.05 line in red",
        x = "Posterior Probability",
@@ -105,7 +108,7 @@ posterior_probabilities %>%
 
 ## Credible Interval Overlap
 
-```{r}
+```{r credible-interval-overlap, fig.height = 3}
 # calculate the bounds for the complete data
 comp_results <- all_results %>%
   filter(scenario == "No missing") %>%
@@ -142,13 +145,17 @@ cred_interval_overlap <-
     
 # plot the credible interval overlap for each variable
 cred_interval_overlap %>%
+  filter(variable %in% c("G2", "higher_yes")) %>%  
   ggplot(aes(interval_overlap, scenario)) +
   geom_col() +
-  facet_wrap(~variable, nrow = 2) +
+  facet_wrap(~variable, nrow = 1) +
   labs(title = "Regression Confidence Interval Overlap",
        x = "Interval Overlap",
        y = NULL)
 
+```
+
+```{r credible-interval-overlap-overall}
 # plot the credible interval overlap for each model
 cred_interval_overlap %>%
   group_by(scenario) %>%

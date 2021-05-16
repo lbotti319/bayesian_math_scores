@@ -1,5 +1,7 @@
 \documentclass[11pt]{article}
 \usepackage{cite}
+\usepackage{graphicx}
+\graphicspath{ {figures/} }
 \usepackage[legalpaper, margin=0.75in]{geometry}
 
 \begin{document}
@@ -56,25 +58,39 @@ It is important to note that we know the type of missingness before applying our
 
 We implement missing data methods under the different missing data scenarios above. For each method we implement three comparisons to evaluate the performance of the methods under the different scenarios. 
 
-First, we visually compare samples from the posterior distributions under the case with no missing data against cases with missing data. If the methods are effective, the center and spread of the posterior samples from the case with missing data should match the case without missing data. 
+First, we visually compare samples from the posterior distributions under the case with no missing data against cases with missing data. If the methods are effective, the center and spread of the posterior samples from the case with missing data should match the case without missing data. Second, we compare inferences with a common decision rule. For example, if the coefficient for age is different than zero for the case without missing data, is it also different than zero for cases with missing data. Ideally, each case will have a handful of inferences and the inferences should align across all cases. Finally, we calculate credible interval overlap. \cite{Karr2006} introduced confidence interval overlap as a method to evaluate the utility of data after statistical disclosure control. We use the notation of \cite{Snoke2018}.
 
-Second, we compare inferences with a common decision rule. For example, if the coefficient for age is different than zero for the case without missing data, is it also different than zero for cases with missing data. Ideally, each case will have a handful of inferences and the inferences should align across all cases. 
-
-Finally, we will calculate credible interval overlap. \cite{Karr2006} introduced confidence interval overlap as a method to evaluate the utility of data after statistical disclosure control. We use the notation of \cite{Snoke2018}.
-
-Let $U_{comp,k}$ be the upper bound of the $k^{th}$ credible interval for the case without missing data. Let $U_{miss,k}$ be the upper bound of the $k^{th}$ credible interval for the case with missing data. Let $L_{comp,k}$ be the lower bound of the $k^{th}$ credible interval for the case without missing data. Let $L_{miss,k}$ be the lower bound of the $k^{th}$ credible interval for the case with missing data. 
-
-The credible interval overlap for the $k_th$ estimate (coefficient or mean) is 
+Let $U_{comp,k}$ be the upper bound of the $k^{th}$ credible interval for the case without missing data. Let $U_{miss,k}$ be the upper bound of the $k^{th}$ credible interval for the case with missing data. Let $L_{comp,k}$ be the lower bound of the $k^{th}$ credible interval for the case without missing data. Let $L_{miss,k}$ be the lower bound of the $k^{th}$ credible interval for the case with missing data. The credible interval overlap for the $k^{th}$ estimate (coefficient or mean) is 
 
 $$J_k = \frac{1}{2}\left[\frac{min(U_{comp,k}, U_{miss,k}) - max(L_{comp,k}, L_{miss,k})}{U_{comp,k} - L_{comp,k}} + \frac{min(U_{comp,k}, U_{miss,k}) - max(L_{comp,k}, L_{miss,k})}{U_{miss,k} - L_{miss,k}}\right]$$
 
-The interval overlap measure can then be summarized as 
+The interval overlap measure can then be summarized with $J = \frac{1}{p}\sum_{k = 1}^pJ_k$ where $p$ is the number of interval or coefficients. A value of one corresponds to a perfect interval overlap, postiive values correspond to the proportion of overlap in the intervals, and negative values correspond to the distance between intervlas that do not overlap. 
 
-$$J = \frac{1}{p}\sum_{i = 1}^pJ_k$$
+\vspace{0.25in}
 
-where $p$ is the number of interval or coefficients. 
+\textbf{Figure 1}
+
+\includegraphics[width=6.5in, height=5in]{posterior-samples-1}
+
+\textbf{Figure 2}
+
+\includegraphics[width=6.5in, height=3in]{credible-interval-overlap-1}
+
+Further results are included in Appendix C. 
 
 \section{Discussion}
+
+Overall, the missing data methods are effective at mitigating the consequences of missing data; however, the effectiveness is based on extreme assumptions about the knowledge of the missingness and are very sensitive to the types and amount of missingness. 
+
+Figure 1 plots the posterior samples and posterior median for each coefficient under each scenario. Bayesian linear regression without adjustment is robust to the MCAR missingness up to 50 percent even though we start with fewer than 400 observations. 
+
+The MAR scenarios result in posterior samples with much greater variance for some coefficients, but the centers of the samples were accurate. The extra variance could be the result of the impuation model. Figure 3 in Appendix C shows that the inferences for most coefficients are the same too. Most of the coefficients have very small or very large effect sizes, so the inferences were only affected for age and failures.
+
+The posterior samples for the MNAR scenario have less variance than the MAR scenarios but the posterior medians are very wrong for coefficients like failures and G2. Figure 2 shows that the 95 percent posterior credible intervals for G2 do not overlap at all in three of four MNAR situations. The weakness of the MAR methods is highlighted but its failure in the MNAR scenario in recreating the credible interval for G2 coefficient.  
+
+Figure 2 shows that the methods are very successful in all scenarios for the coefficient for higher\_yes. It is unclear if this is true of most binary variables or if it is because the variable is highly imbalanced and most values are "yes". For higher\_yes, the methods can't impute impossible values because the variable only takes on one of two levels. Figure 5 in Appendix C shows that for G2, which is continuous, the model did impute values outside of the range of the existing data. We also assume normality, which is approximately true but does not capture the spike of zero values in the true data. Further investigation into the data could suggest adding a latent variable for dropping the class and then modeling the data as normal conditional on staying in the class. 
+
+This simulation study demonstrates some properties of missing data methods, but more work could follow. We could directly modeling the missingness mechanism in the MNAR case. We could experiment with different starting points for the Gibbs sampler including mutilple chains. We could experiment with different priors for the imputation model and the linear regression model of interest because we only used non-informative priors. We could add missingness to more variables and experiment with dependence between the missingness since we assumed the missingness is independent.  
 
 \newpage
 \section{Appendix A}
@@ -342,6 +358,18 @@ $$\vec\alpha^{(b)}|  X_{obs, Higher}, X_{obs, Age}, X_{mis, Higher}, X_{mis, Age
 Where $\hat{\vec\alpha}$ is the posterior mode found through Newton-Raphson and $V_{\alpha}$ is the last working variance from iterative solution to the posterior mode
 
 This is derived on slides 206-208 in notes set 1.
+
+\newpage
+
+\section{Appendix C}
+
+\textbf{Figure 3}
+
+\includegraphics[width=6.5in, height=5in]{posterior-probabilities-1}
+
+\textbf{Figure 4}
+
+\includegraphics[width=6.5in, height=4in]{credible-interval-overlap-overall-1}
 
 \newpage
 
