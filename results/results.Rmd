@@ -23,10 +23,10 @@ theme_set(theme_minimal())
 ## Load Data
 
 ```{r}
-scenarios_order <- c("No missing", "MCAR 0.05", "MCAR 0.10", "MCAR 0.25", "MCAR 0.50", "MNAR")
-
-
-read_csv(here::here("results", "04_results_thinned.csv"))
+scenarios_order <- c("No missing", 
+                     "MCAR 0.05", "MCAR 0.10", "MCAR 0.25", "MCAR 0.50", 
+                     "MAR 0.05", "MAR 0.10", "MAR 0.25", "MAR 0.50",
+                     "MNAR 0.05", "MNAR 0.10", "MNAR 0.25", "MNAR 0.50")
 
 all_results <- bind_rows(
   "No missing" = read_csv(here::here("results", "01_beta_dists.csv")),
@@ -34,15 +34,14 @@ all_results <- bind_rows(
   "MCAR 0.10" = read_csv(here::here("results", "02_dists_0.1.csv")),
   "MCAR 0.25" = read_csv(here::here("results", "02_dists_0.25.csv")),
   "MCAR 0.50" = read_csv(here::here("results", "02_dists_0.5.csv")),
-  "MNAR" = read_csv(here::here("results", "04_results_thinned.csv")) %>%
-    select(intercept = beta_intercept,
-           age = beta_age,
-           sex_M = beta_sex_M,
-           failures = beta_failures,
-           higher_yes = beta_higher_yes,
-           Medu = beta_Medu,
-           absences = beta_absences,
-           G2 = beta_G2),
+  "MAR 0.05" = read_csv(here::here("results", "03_dists_0.05.csv")),
+  "MAR 0.10" = read_csv(here::here("results", "03_dists_0.1.csv")),
+  "MAR 0.25" = read_csv(here::here("results", "03_dists_0.25.csv")),
+  "MAR 0.50" = read_csv(here::here("results", "03_dists_0.5.csv")),
+  "MNAR 0.05" = read_csv(here::here("results", "04_dists_0.05.csv")),
+  "MNAR 0.10" = read_csv(here::here("results", "04_dists_0.1.csv")),
+  "MNAR 0.25" = read_csv(here::here("results", "04_dists_0.25.csv")),
+  "MNAR 0.50" = read_csv(here::here("results", "04_dists_0.5.csv")),
   .id = "scenario"
 )  %>%
   pivot_longer(
@@ -50,11 +49,13 @@ all_results <- bind_rows(
     names_to = "variable", 
     values_to = "beta"
   ) %>%
-  mutate(scenario = factor(scenario, levels = scenarios_order))
+  mutate(scenario = factor(scenario, levels = scenarios_order)) %>%
+  filter(variable=="G2" | variable=="higher_yes")
 
 ```
 
 ## Compare Samples
+
 
 ```{r}
 # calculate posterior medians
@@ -71,7 +72,7 @@ ggplot() +
   geom_point(data = posterior_medians,
              mapping = aes(beta, scenario),
              color = "red") +
-  facet_wrap(~variable, scales = "free_x", nrow = 2) +
+  facet_wrap(~variable, scales = "free_x", ncol=2) +
   labs(title = "Posterior Samples",
        subtitle = "Posterior medians in red",
        x = "Beta Samples",
@@ -94,7 +95,7 @@ posterior_probabilities %>%
   geom_col() +
   geom_vline(aes(xintercept = 0.05), color = "red") +
   facet_wrap(~variable,
-             nrow = 2) +
+             ncol = 2) +
   labs(title = "Posterior Probabilities",
        subtitle = "0.05 line in red",
        x = "Posterior Probability",

@@ -106,7 +106,7 @@ def running_mean(x):
 
 
 
-def Gibbs_MH(X, y, B, thin, loc=0, scale=10):
+def Gibbs_MH(X, y, B, thin):
     """
     docstring here
     """
@@ -236,8 +236,8 @@ def Gibbs_MH(X, y, B, thin, loc=0, scale=10):
         vbeta = np.linalg.inv(X.values.T.dot(X.values))
 
 
-    return (betas[:, B::thin], sigmas2[B::thin], higher_yes_sim[:, B::thin], G2_sim[:, B::thin], 
-            alphas[:, B::thin], gammas[:,B::thin] , etas[B::thin])
+    return (betas[:, B*thin::thin], sigmas2[B*thin::thin], higher_yes_sim[:, B*thin::thin], G2_sim[:, B*thin::thin], 
+            alphas[:, B*thin::thin], gammas[:,B*thin::thin] , etas[B*thin::thin])
 
 
 
