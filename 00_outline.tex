@@ -46,9 +46,9 @@ $$p(I|y_{obs}, y_{mis}, \phi) = p(I|y_{obs}, \phi)$$
 
 \subsubsection{MNAR}
 
-It is difficult to correctly model a missingness mechanism outside of certain cases like complex survey designs. Instead, we create MNAR missingness and then apply MAR methods to examine how MNAR data can affect linear regression analysis. To create MNAR data for higher, we give higher probabilities of missingness to observations that are "yes" than observations that are "no". To create MNAR data for G2, we set the probability of missingness conditional on age with the following
+It is difficult to correctly model a missingness mechanism outside of certain cases like complex survey designs. Instead, we create MNAR missingness and then apply MAR methods to examine how MNAR data can affect linear regression analysis. To create MNAR data for higher, we give higher probabilities of missingness to observations that are "yes" than observations that are "no". To create MNAR data for G2, we set the probability of missingness conditional on G2 with the following
 
-$$p(missing_i) = \frac{exp(\alpha_0 + \alpha_1 Age_i)}{1 + exp(\alpha_0 + \alpha_1 Age_i)}$$
+$$p(missing_i) = \frac{\exp(\alpha_0 + \alpha_1 G2_i)}{1 + \exp(\alpha_0 + \alpha_1 G2_i)}$$
 
 It is important to note that we know the type of missingness before applying our methods, which is a best-case scenario. \cite{vanBurren2018} notes that there are tests to determine MCAR vs. MAR but they aren't widely used. There are no tests to compare MAR vs. MNAR.
 
