@@ -36,11 +36,11 @@ We will consider missing completely at random (MCAR), missing at random (MAR), a
 
 \subsubsection{MCAR}
 
-We use complete case analysis when observations are MCAR. We simply drop varying proportions of observations and then fit a vanilla Bayesian linear regression model on the remaining observations. We add missingness at rates of 0.05, 0.1, 0.25, and 0.5.
+We use complete case analysis when observations are MCAR. We simply drop varying proportions of observations from the categorical variable for if the student wants to pursue higher education and the numeric variable for second period grade. We then fit a vanilla Bayesian linear regression model on the remaining observations. We add missingness at rates of 0.05, 0.1, 0.25, and 0.5.
 
 \subsubsection{MAR}
 
-More sophisticated methods are needed to create MAR missingness and to analyze data with MAR missingness. We add missing values to the binary variable higher by applying different probabilities of missingness based on less than 18 years old and 18 or older. We add missing values to G2 by by applying different probabilities of missingness based on less than 18 years old and 18 or older. Here, the values are no longer missing completely at random. We can impute the missing values but we do not need to model the missingness mechanism. 
+More sophisticated methods are needed to create MAR missingness and to analyze data with MAR missingness. We add missing values to the binary variable higher by applying different probabilities of missingness based on less than 18 years old and 18 years or older. We add missing values to G2 by by applying different probabilities of missingness based on less than 18 years old and 18 years or older. Here, the values are no longer missing completely at random as they are dependent on the observed values of the numeric variable age. Given this is a MAR missingness scenario, we can impute the missing values but we do not need to model the missingness mechanism. 
 
 We use Bayesian logistic regression with normal approximation with age as the only predictor to impute missing values of higher. We use a flat prior for this model. We use Bayesian linear regression with age as the only predictor to impute missing values of G2. We add missingness roughly at rates corresponding to 0.05, 0.1, 0.25, and 0.5. After the imputation steps, we estimate the same linear regression model from the MCAR case on the augmented data.
 
@@ -78,11 +78,11 @@ The interval overlap measure can then be summarized with $J = \frac{1}{p}\sum_{k
 
 \textbf{Figure 3} Imputations for MNAR missing at a rate of 0.25
 
-\includegraphics[width=4in, height=3in]{MNAR_0.25_G2}
+\includegraphics[width=4in, height=3in]{MNAR_025_G2}
 
 \textbf{Figure 4} Imputations for MNAR missing at a rate of 0.25
 
-\includegraphics[width=4in, height=3in]{MNAR_0.25_higher_yes}
+\includegraphics[width=4in, height=3in]{MNAR_025_higher_yes}
 
 Further results are included in Appendix C. 
 
@@ -92,13 +92,13 @@ Overall, the missing data methods are effective at mitigating the consequences o
 
 Figure 1 plots the posterior samples and posterior median for each coefficient under each scenario. Bayesian linear regression without adjustment is robust to the MCAR missingness up to 50 percent even though we start with fewer than 400 observations. 
 
-The MAR scenarios result in posterior samples with much greater variance for some coefficients, but the centers of the samples are accurate. The extra variance could be the result of the imputation model. Figure 5 in Appendix C shows that the inferences for most coefficients are the same too. Most of the coefficients have very small or very large effect sizes, so the inferences are only affected for age and failures.
+The MAR scenarios result in posterior samples with much greater variance for some coefficients, but the centers of the samples are for the most part accurate. The extra variance could be the result of the assumptions in the imputation model. Figure 5 in Appendix C shows that the inferences for most coefficients are the same too. Most of the coefficients have very small or very large effect sizes, so the inferences are only affected for age and failures.
 
-The posterior samples for the MNAR scenario have less variance than the MAR scenarios but the posterior medians are very wrong for coefficients like failures and G2. Figure 2 shows that the 95 percent posterior credible intervals for G2 do not overlap at all in three of four MNAR situations. The weakness of the MAR methods is highlighted but its failure in the MNAR scenario in recreating the credible interval for G2 coefficient.  
+The posterior samples for the MNAR scenario have less variance than the MAR scenarios but the posterior medians are very wrong for coefficients like failures and G2. Figure 2 shows that the 95 percent posterior credible intervals for G2 do not overlap at all in three of four MNAR situations. The weakness of the MAR methods is highlighted but its failure in the MNAR scenario in recreating the credible interval for the G2 coefficient.  
 
-Figure 2 shows that the methods are very successful in all scenarios for the coefficient for higher\_yes. It is unclear if this is true of most binary variables or if it is because the variable is highly imbalanced and most values are "yes". For higher\_yes, the methods can't impute impossible values because the variable only takes on one of two levels. Figure 5 in Appendix C shows that for G2, which is continuous, the model did impute values outside of the range of the existing data. Figure 3 shows the imputations. We also assume normality, which is approximately true but does not capture the spike of zero values in the true data. Further investigation into the data could suggest adding a latent variable for dropping the class and then modeling the data as normal conditional on staying in the class. 
+Figure 2 shows that the methods are very successful in all scenarios for the coefficient for higher\_yes. It is unclear if this is true of most binary variables or if it is because the variable is highly imbalanced and most values are "yes" as can be seen in Figure 4. For higher\_yes, the methods can't impute impossible values because the variable only takes on one of two levels. Figure 5 in Appendix C shows that for G2, which is continuous, the model did impute values outside of the range of the existing data. Figure 3 shows the density of the imputations as well as the density of the observed values. We also assume normality, which is approximately true but does not capture the spike of zero values in the true data. Assuming normality also carries the implication of allowing the entire real number line be the support for the variable G2. We know this is not true from the plot of observed G2 values in Figures 3 and 4. Further investigation into the data could suggest adding a latent variable for dropping the class and then modeling the data as normal conditional on staying in the class. 
 
-This simulation study demonstrates some properties of missing data methods, but more work could follow. We could directly modeling the missingness mechanism in the MNAR case. We could experiment with different starting points for the Gibbs sampler including multiple chains. We could experiment with different priors for the imputation model and the linear regression model of interest because we only used non-informative priors. We could add missingness to more variables and experiment with dependence between the missingness since we assumed the missingness is independent.  
+This simulation study demonstrates some properties of missing data methods, but more work could follow. We could directly model the missingness mechanism in the MNAR case. We could experiment with different starting points for the Gibbs sampler including multiple chains. We could experiment with different priors for the imputation model and the linear regression model of interest because we only used non-informative priors for the respective parameters. We could assume different imputation models for the respective variables with missing data. We could add missingness to more variables and experiment with dependence between the missingness since we assumed the missingness is independent.  
 
 \newpage
 \section{Appendix A}
@@ -152,7 +152,9 @@ $$p(\theta|x, y_{obs}) = p(\theta|x, y_{obs}, I)$$
 \newpage
 \section{Appendix B}
 
-\subsubsection{Setup}
+Below we explain the model setup as well as the sampling procedure used.
+
+\subsubsection{Model Setup}
 
 Let $y = (y_{mis}, y_{obs})$ and $\mathbf{X} = (\mathbf{X}_{mis}, \mathbf{X}_{obs})$
 
@@ -180,7 +182,7 @@ Second, for missing values of Higher, we assume a Bernoulli distribution and we 
 
 \subsubsection{Sampling Procedure}
 
-The sampling procedure is similar to an EM algorithm. There are imputation steps and then conditional posterior steps. Use the sample mean for G2, "Yes" for Higher (sample mode), and OLS estimates from the complete data for everything else for all starting values. The Gibbs sample has the following steps:
+The sampling procedure is similar to an EM algorithm. There are imputation steps and then conditional posterior steps. We use the sample mean for G2, "Yes" for Higher (sample mode), and OLS estimates from the complete data for everything else for all starting values. The Gibbs sampler has the following steps:
 
 \vspace{0.25in}
 
@@ -245,6 +247,8 @@ $$\vec\alpha^{(b)}|  X_{obs, Higher}, X_{obs, Age}, X_{mis, Higher}, X_{mis, Age
 where $\hat{\vec\alpha}$ is the posterior mode found through Newton-Raphson and $V_{\alpha}$ is the last working variance from iterative solution to the posterior mode.
 
 This is derived on slides 206-208 in notes set 1.
+
+We note that once all relevant parameters are sampled, we discard some of these samples to account for burn-in and thinning per what we have seen in class.
 
 \newpage
 
