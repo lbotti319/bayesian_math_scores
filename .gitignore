@@ -10,6 +10,7 @@
 *.log
 *.synctex.gz
 *.aux
+*.blg
 
 
 # Python files
