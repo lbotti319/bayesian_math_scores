@@ -6,6 +6,7 @@
 
 \begin{document}
 
+
 \section{Introduction}
 
 Missing data affect analysis in almost every quantitative discipline. Most common statistical methods are demonstrated on pristine data sets and the incorrect application of common statistical methods to data sets with missingness can lead to biased results. 
@@ -68,6 +69,8 @@ The interval overlap measure can then be summarized with $J = \frac{1}{p}\sum_{k
 
 \vspace{0.25in}
 
+\newpage
+
 \textbf{Figure 1}
 
 \includegraphics[width=6.5in, height=5in]{posterior-samples-1}
@@ -96,9 +99,16 @@ The MAR scenarios result in posterior samples with much greater variance for som
 
 The posterior samples for the MNAR scenario have less variance than the MAR scenarios but the posterior medians are very wrong for coefficients like failures and G2. Figure 2 shows that the 95 percent posterior credible intervals for G2 do not overlap at all in three of four MNAR situations. The weakness of the MAR methods is highlighted but its failure in the MNAR scenario in recreating the credible interval for the G2 coefficient.  
 
-Figure 2 shows that the methods are very successful in all scenarios for the coefficient for higher\_yes. It is unclear if this is true of most binary variables or if it is because the variable is highly imbalanced and most values are "yes" as can be seen in Figure 4. For higher\_yes, the methods can't impute impossible values because the variable only takes on one of two levels. Figure 5 in Appendix C shows that for G2, which is continuous, the model did impute values outside of the range of the existing data. Figure 3 shows the density of the imputations as well as the density of the observed values. We also assume normality, which is approximately true but does not capture the spike of zero values in the true data. Assuming normality also carries the implication of allowing the entire real number line be the support for the variable G2. We know this is not true from the plot of observed G2 values in Figures 3 and 4. Further investigation into the data could suggest adding a latent variable for dropping the class and then modeling the data as normal conditional on staying in the class. 
+Figure 2 shows that the methods are very successful in all scenarios for the coefficient for higher\_yes. It is unclear if this is true of most binary variables or if it is because the variable is highly imbalanced and most values are "yes" as can be seen in Figure 4. For higher\_yes, the methods can't impute impossible values because the variable only takes on one of two levels. Figure 5 in Appendix C shows that for G2, which is continuous, the model did impute values outside of the range of the existing data. Figure 3 shows the density of the imputations as well as the density of the observed values. We also assume normality, which is approximately true but does not capture the spike of zero values in the true data. Assuming normality also carries the implication of allowing the entire real number line be the support for the variable G2. We know this is not true from the plot of observed G2 values in Figures 3 and 4. Further investigation into the data could suggest adding a latent variable for dropping the class and then modeling the data as normal conditional on staying in the class. The last thing to consider is that G2 dominates the model in importance. It would be interesting to see how these methods preform on more equal model coefficients.
 
-This simulation study demonstrates some properties of missing data methods, but more work could follow. We could directly model the missingness mechanism in the MNAR case. We could experiment with different starting points for the Gibbs sampler including multiple chains. We could experiment with different priors for the imputation model and the linear regression model of interest because we only used non-informative priors for the respective parameters. We could assume different imputation models for the respective variables with missing data. We could add missingness to more variables and experiment with dependence between the missingness since we assumed the missingness is independent.  
+\subsection{Further Research}
+
+This simulation study demonstrates some properties of missing data methods, but more work could follow. The most obvious next step would be to directly model the missingness mechanism in the MNAR case. Following that, we could experiment with different starting points for the Gibbs sampler including multiple chains to improve the convergence of our parameters and imputations. We could experiment with different priors for the imputation model and the linear regression model of interest as we only used non-informative priors for the respective parameters. We could assume different imputation models for the respective variables with missing data. Finally, we could add missingness to more variables and experiment with dependence between the missingness since we manufactured independence into our missingness mechanisms here.
+
+\newpage
+
+\bibliography{references}
+\bibliographystyle{apalike}
 
 \newpage
 \section{Appendix A}
@@ -262,10 +272,7 @@ We note that once all relevant parameters are sampled, we discard some of these 
 
 \includegraphics[width=6.5in, height=4in]{credible-interval-overlap-overall-1}
 
-\newpage
 
-\bibliography{references}
-\bibliographystyle{apalike}
 
 \end{document}
 
